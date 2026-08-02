@@ -1,0 +1,5 @@
+[
+  { "token": "CHANGE-ME-owner-long-random-string", "name": "izuosi",  "role": "owner" },
+  { "token": "CHANGE-ME-tester1-long-random-string", "name": "tester1", "role": "full" },
+  { "token": "CHANGE-ME-tester2-long-random-string", "name": "tester2", "role": "full" }
+]

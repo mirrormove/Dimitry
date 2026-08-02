@@ -1,0 +1,14 @@
+{
+  "name": "Dimitry — Trading Cockpit",
+  "short_name": "Dimitry",
+  "description": "AI trading intelligence cockpit. Not financial advice.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080b0e",
+  "theme_color": "#080b0e",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

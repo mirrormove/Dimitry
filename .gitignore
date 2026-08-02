@@ -1,0 +1,77 @@
+# ============================================================================
+#  DIMITRY — WHITELIST .gitignore   (safety-first)
+#
+#  Posture: IGNORE EVERYTHING, then explicitly ALLOW only code/apps/docs that
+#  have been verified to contain NO personal or financial data. This repo is a
+#  CODE backup — your vault (notes, analyses, beliefs, fills, journal, account
+#  screenshots, balances) never leaves your machine.
+#
+#  Rule: a file is published ONLY if it is un-ignored below. When in doubt, it
+#  stays private. To add a new safe file, add a matching `!` line.
+# ============================================================================
+
+# 1) ignore every file, everywhere …
+*
+# 2) … but let git DESCEND into directories so the allows below can reach nested files
+!*/
+
+# always-deny, even if a broad allow is added later
+.env
+.env.*
+*.key
+*.pem
+*_token*
+*secret*
+*credentials*
+*.ndjson
+beliefs.json
+users.json
+node_modules/
+__pycache__/
+.DS_Store
+Thumbs.db
+
+# ---------------------------------------------------------------------------
+#  ALLOWED — the engine (pure logic, no personal data)
+# ---------------------------------------------------------------------------
+!/.gitignore
+!/README.md
+!/LICENSE
+
+!/50_Training/Tools/dimitry-server/*.js
+!/50_Training/Tools/dimitry-server/watchers/*.js
+!/50_Training/Tools/dimitry-server/rules/*.js
+!/50_Training/Tools/dimitry-server/calibration/*.js
+!/50_Training/Tools/dimitry-server/replay/*.js
+
+# PWA + launch assets (no data)
+!/50_Training/Tools/dimitry-server/manifest.webmanifest
+!/50_Training/Tools/dimitry-server/sw.js
+!/50_Training/Tools/dimitry-server/icon.svg
+!/50_Training/Tools/dimitry-server/*.md
+!/50_Training/Tools/dimitry-server/*.bat
+!/50_Training/Tools/dimitry-server/*.vbs
+!/50_Training/Tools/dimitry-server/users.example.json
+
+# ---------------------------------------------------------------------------
+#  ALLOWED — the mobile app (pure renderer, embeds no data) + docs
+# ---------------------------------------------------------------------------
+!/50_Training/Tools/Dimitry Mobile.html
+!/50_Training/Tools/Dimitry Mobile — UI-UX Guide.md
+!/50_Training/Tools/Dimitry — UI-UX Design System.md
+
+# ---------------------------------------------------------------------------
+#  RE-DENIED — carve-outs INSIDE allowed folders that DO hold real results.
+#  (Order matters: these come after the allows, so they win.)
+# ---------------------------------------------------------------------------
+/50_Training/Tools/dimitry-server/calibration/scorecard-data.js
+/50_Training/Tools/dimitry-server/calibration/self-model-data.js
+/50_Training/Tools/dimitry-server/calibration/labelled-events.js
+/50_Training/Tools/dimitry-server/seed-beliefs.js
+
+#  Explicitly NEVER published (belt-and-suspenders — already covered by `*`):
+#   • Dimitry Dashboard.html  ← embeds live account balances / positions
+#   • *.ndjson, beliefs.json, reconciliation.json, process-leaks.json,
+#     base-rates.json, self-model.json, adjudication.json
+#   • _attachments/**  (MT5 / position screenshots)
+#   • every vault note, analysis, knowledge, prop and review folder

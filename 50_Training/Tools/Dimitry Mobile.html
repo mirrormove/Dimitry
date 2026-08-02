@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+<meta name="theme-color" content="#070a0d"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>Dimitry Commander</title>
+<style>
+  :root{
+    --bg:#070a0d; --card:#0c1218; --card2:#0a1015; --line:#16212b; --ink:#eef4f8; --mut:#93a3ad; --dim:#5a6b76;
+    --long:#2fbf7a; --short:#e5484d; --wait:#d99b28; --info:#3f7fd6; --sleep:#4a5a64;
+    --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+    --acc:var(--sleep);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding:env(safe-area-inset-top) 0 calc(64px + env(safe-area-inset-bottom))}
+  .wrap{max-width:520px;margin:0 auto;padding:14px 14px 0}
+
+  header{text-align:center;padding:6px 0 12px}
+  header .brand{font-size:12px;letter-spacing:.38em;font-weight:600;padding-left:.38em;color:var(--mut)}
+  header .status{display:inline-flex;align-items:center;gap:5px;font-size:7.5px;letter-spacing:.22em;color:var(--dim);margin-top:5px}
+  .live{width:5px;height:5px;border-radius:50%;background:var(--long);box-shadow:0 0 0 0 var(--long);animation:pulse 2.4s ease-out infinite}
+  .live.off{background:var(--short);animation:none}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,191,122,.5)}70%{box-shadow:0 0 0 7px rgba(47,191,122,0)}100%{box-shadow:0 0 0 0 rgba(47,191,122,0)}}
+
+  /* HERO carousel */
+  .herocar{position:relative;overflow:hidden;border-radius:22px;margin-bottom:8px;touch-action:pan-y}
+  .herotrack{display:flex;transition:transform .32s cubic-bezier(.4,0,.2,1)}
+  .heroslide{min-width:100%;flex:none}
+  /* --g = conviction 0..1 → drives glow intensity */
+  .hero{position:relative;border:1px solid var(--line);border-radius:22px;overflow:hidden;--g:.5;
+    background:radial-gradient(120% 90% at 50% 0%, color-mix(in srgb,var(--acc) calc(7% + var(--g)*18%), transparent) 0%, var(--card) 55%);
+    padding:16px 18px 18px;animation:breathe 5.5s ease-in-out infinite}
+  @keyframes breathe{
+    0%,100%{box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) calc(15% + var(--g)*32%),transparent), 0 0 calc(14px + var(--g)*40px) -8px color-mix(in srgb,var(--acc) calc(22% + var(--g)*50%),transparent)}
+    50%    {box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) calc(26% + var(--g)*54%),transparent), 0 0 calc(28px + var(--g)*66px) -6px color-mix(in srgb,var(--acc) calc(38% + var(--g)*58%),transparent)}}
+  .hbadge{text-align:center;font-size:10.5px;letter-spacing:.22em;color:var(--acc);font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px}
+  .hbadge .bd{width:6px;height:6px;border-radius:50%;background:var(--acc)}
+  .hasset{text-align:center;font-size:15px;letter-spacing:.18em;color:var(--mut);margin-top:12px;font-weight:600}
+  .ringwrap{position:relative;height:132px;display:flex;align-items:center;justify-content:center;margin:2px 0 2px}
+  .ring{position:absolute;inset:0;margin:auto;width:230px;height:132px;pointer-events:none}
+  .ring ellipse{fill:none;stroke:var(--acc)}
+  .ring .r1{stroke-dasharray:1.5 9;opacity:.55;animation:spin 44s linear infinite;transform-origin:center}
+  .ring .r2{stroke-dasharray:1 16;opacity:.3;animation:spin 66s linear infinite reverse;transform-origin:center}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hdir{font-size:58px;font-weight:800;letter-spacing:.04em;color:var(--acc);line-height:1;text-shadow:0 0 30px color-mix(in srgb,var(--acc) 45%,transparent);z-index:1}
+  .hconv{text-align:center;margin-top:2px}
+  .hconv .k{font-size:10px;letter-spacing:.2em;color:var(--dim)}
+  .hconv .v{font-size:28px;font-weight:800;color:var(--acc);line-height:1.05}
+  .segbar{display:flex;gap:2.5px;justify-content:center;margin:9px 0 4px;flex-wrap:wrap}
+  .segbar i{width:6px;height:14px;border-radius:1.5px;background:#1b2730}
+  .segbar i.on{background:var(--acc);box-shadow:0 0 6px -1px var(--acc)}
+  .hstage{text-align:center;font-size:12px;letter-spacing:.06em;font-weight:700;margin-top:8px;color:var(--acc)}
+  .hstage.dim{color:var(--mut)}
+  .hgrid{display:flex;border-top:1px solid var(--line);margin-top:12px;padding-top:11px}
+  .hgrid>div{flex:1;text-align:center;padding:0 4px}
+  .hgrid>div+div{border-left:1px solid var(--line)}
+  .hgrid .k{font-size:9px;letter-spacing:.14em;color:var(--dim)}
+  .hgrid .v{font-size:13.5px;font-weight:700;margin-top:5px;font-variant-numeric:tabular-nums}
+  .hmeta{display:flex;justify-content:center;gap:14px;border-top:1px solid var(--line);margin-top:11px;padding-top:9px;font-size:10px;color:var(--dim);letter-spacing:.04em}
+  .hmeta b{color:var(--mut);font-weight:700}
+  .dots{display:flex;justify-content:center;gap:6px;margin:2px 0 12px}
+  .dots i{width:6px;height:6px;border-radius:50%;background:#22303b;transition:all .2s}
+  .dots i.on{background:var(--acc);width:16px;border-radius:3px}
+  .swipehint{text-align:center;font-size:9px;letter-spacing:.14em;color:var(--dim);margin:-4px 0 12px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-bottom:13px}
+  .clbl{font-size:10px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
+
+  .state{display:flex;align-items:center;gap:14px}
+  .radar{position:relative;width:34px;height:34px;flex:none}
+  .radar b{position:absolute;inset:0;margin:auto;width:7px;height:7px;border-radius:50%;background:var(--info)}
+  .radar::before,.radar::after{content:"";position:absolute;inset:0;border:1px solid var(--info);border-radius:50%;opacity:0;animation:radar 3.2s ease-out infinite}
+  .radar::after{animation-delay:1.6s}
+  @keyframes radar{0%{transform:scale(.2);opacity:.7}100%{transform:scale(1);opacity:0}}
+  .state .mid{flex:1;min-width:0}
+  .state .rn{font-size:13.5px;font-weight:700;margin-top:3px;line-height:1.35}
+  .state .rc{text-align:right;flex:none}
+  .state .rc .v{font-size:15px;font-weight:800;color:var(--info)}
+
+  .wl .row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+  .wl .row:first-of-type{border-top:none}
+  .ic{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex:none;border:1.5px solid}
+  .wl .nm{font-weight:700;font-size:14px;letter-spacing:.02em}
+  .tag{font-size:9px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;margin-left:8px}
+  .wl .lean{margin-left:auto;font-size:11px;font-weight:700;letter-spacing:.03em;text-align:right}
+  .wl .cf{font-size:13px;font-weight:800;min-width:34px;text-align:right;font-variant-numeric:tabular-nums}
+  .chev{color:var(--dim);font-size:13px}
+
+  .brain{display:flex;align-items:center;gap:12px}
+  .brain .bi{width:32px;height:32px;flex:none;color:var(--info);opacity:.85}
+  .brain .col{flex:1;text-align:center}
+  .brain .col+.col{border-left:1px solid var(--line)}
+  .brain .k{font-size:9px;letter-spacing:.14em;color:var(--dim)}
+  .brain .v{font-size:15px;font-weight:800;margin-top:3px}
+  .ecg{width:60px;height:18px}
+  .ecg polyline{fill:none;stroke:var(--long);stroke-width:1.6;stroke-linejoin:round;stroke-dasharray:160;stroke-dashoffset:160;animation:beat 2.6s linear infinite}
+  @keyframes beat{to{stroke-dashoffset:-160}}
+  .effbar{display:flex;gap:2px;justify-content:center;margin-top:5px}
+  .effbar i{width:4px;height:9px;border-radius:1px;background:#1b2730}
+  .effbar i.on{background:var(--info)}
+
+  /* setups list */
+  .stp{border-top:1px solid var(--line);padding:12px 0;cursor:pointer}
+  .stp:first-child{border-top:none} .stp:active{opacity:.6}
+  .stp .hd{display:flex;align-items:center;gap:8px}
+  .stp .body{color:var(--mut);font-size:12px;line-height:1.5;margin-top:6px}
+  .stp .prox{margin-left:auto;font-size:10px;color:var(--dim);font-family:var(--mono)}
+  .empty{color:var(--dim);text-align:center;padding:26px 0;font-size:13px}
+
+  /* journal / upload */
+  .jhelp{color:var(--mut);font-size:12.5px;line-height:1.55;margin:0 0 12px}
+  .ubtn{display:flex;align-items:center;justify-content:center;gap:2px;border:1px dashed var(--line);border-radius:12px;
+    padding:16px;color:var(--info);font-weight:700;font-size:14px;letter-spacing:.02em}
+  .ubtn:active{background:var(--card2)}
+  .jfi{font-size:12px;color:var(--mut);margin:8px 2px 0;min-height:0}
+  #jnote{width:100%;margin-top:11px;background:var(--card2);border:1px solid var(--line);border-radius:12px;
+    color:var(--ink);padding:11px 12px;font:13px/1.5 inherit;resize:vertical;-webkit-user-select:text;user-select:text}
+  .usend{width:100%;margin-top:11px;background:var(--info);border:none;border-radius:12px;color:#fff;
+    font-weight:800;font-size:14px;letter-spacing:.04em;padding:13px}
+  .usend:disabled{opacity:.45}
+  .jstatus{text-align:center;font-size:12px;margin-top:9px;min-height:16px}
+  .jrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:12px}
+  .jrow:first-child{border-top:none}
+  .jrow .jk{color:var(--mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .jrow .jt{color:var(--dim);font-size:11px} .jrow .jp{color:var(--wait);font-size:10px;font-weight:700}
+  .jrow .jp.done{color:var(--long)}
+  /* entry-type selector */
+  .kinds{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .kind{flex:1;min-width:64px;text-align:center;padding:8px 4px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card2);color:var(--dim);font-size:10px;font-weight:800;letter-spacing:.04em}
+  .kind.on{color:var(--info);border-color:var(--info);background:color-mix(in srgb,var(--info) 12%,transparent)}
+  /* formatted journal entry card */
+  .jent{border:1px solid var(--line);border-radius:13px;background:var(--card2);padding:11px 12px;margin-bottom:9px}
+  .jent .jh{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+  .jent .kb{font-size:8.5px;font-weight:800;letter-spacing:.08em;padding:2px 6px;border-radius:5px;
+    border:1px solid var(--line);color:var(--dim)}
+  .jent .jsum{font-family:var(--mono);font-size:12.5px;font-weight:800;flex:1;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .jent .jwhen{font-size:9.5px;color:var(--dim);flex:none}
+  .jent .jtext{font-size:12px;color:var(--mut);line-height:1.5;margin-bottom:7px;-webkit-user-select:text;user-select:text}
+  .jfields{display:flex;flex-wrap:wrap;gap:5px}
+  .jf{font-size:10px;font-family:var(--mono);padding:3px 7px;border-radius:6px;background:var(--card);border:1px solid var(--line);color:var(--mut)}
+  .jf b{color:var(--ink);font-weight:800}
+  .jf.good{border-color:color-mix(in srgb,var(--long) 40%,transparent);color:#bfefd6}
+  .jf.bad{border-color:color-mix(in srgb,var(--short) 40%,transparent);color:#f6c9cb}
+  .jf.link{border-color:color-mix(in srgb,var(--info) 45%,transparent);color:#c4dbfa}
+  .jatt{font-size:10.5px;color:var(--dim);margin-top:7px}
+  /* view-only users: hide the log-an-entry form (they keep the review + journal read) */
+  body.viewonly #logcard{display:none}
+  /* review */
+  .rstat{display:flex;gap:8px;margin-bottom:4px}
+  .rstat .b{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:9px 6px;text-align:center}
+  .rstat .b .big{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+  .rstat .b .lbl{font-size:8.5px;color:var(--dim);letter-spacing:.06em;margin-top:3px;line-height:1.25}
+  .rev{display:flex;align-items:center;gap:9px;padding:10px 0;border-top:1px solid var(--line);font-size:12px}
+  .rev:first-of-type{border-top:none}
+  .rev .rd{width:5px;height:26px;border-radius:3px;flex:none}
+  .rev .rmid{flex:1;min-width:0}
+  .rev .rn{font-weight:700} .rev .rs{color:var(--dim);font-size:10.5px;margin-top:1px}
+  .rev .rr{font-weight:800;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:9;display:flex;
+    background:rgba(8,11,14,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);
+    padding:8px 0 calc(6px + env(safe-area-inset-bottom))}
+  nav button{flex:1;background:none;border:none;color:var(--dim);font-size:10px;letter-spacing:.12em;
+    display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;font-weight:700}
+  nav button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.7}
+  nav button.on{color:var(--info)}
+  .hidden{display:none}
+  .wl .row{cursor:pointer} .wl .row:active{opacity:.6}
+
+  /* sheet */
+  .sheet{position:fixed;inset:0;z-index:50;background:var(--bg);transform:translateY(100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+  .sheet.on{transform:translateY(0)}
+  .shhead{display:flex;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:var(--bg)}
+  .shback{background:none;border:none;color:var(--info);font-size:15px;font-weight:600;width:64px;text-align:left}
+  .shtitle{flex:1;text-align:center;font-size:12px;letter-spacing:.2em;color:var(--mut);font-weight:700}
+  .shbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 15px calc(30px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;width:100%}
+  .dtitle{font-size:22px;font-weight:800;letter-spacing:.04em;text-align:center;margin:2px 0 12px}
+  .dword{font-size:48px;font-weight:800;color:var(--acc);line-height:1;letter-spacing:.03em;text-align:center;text-shadow:0 0 26px color-mix(in srgb,var(--acc) 40%,transparent)}
+  .dsub{font-size:13px;letter-spacing:.16em;color:var(--mut);text-align:center;margin-top:8px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 2px}
+  .chip{font-size:11px;line-height:1.4;padding:6px 9px;border-radius:9px;border:1px solid var(--line);background:var(--card2);color:var(--mut)}
+  .chip.bull{border-color:color-mix(in srgb,var(--long) 40%,transparent);color:#bfefd6}
+  .chip.bear{border-color:color-mix(in srgb,var(--short) 40%,transparent);color:#f6c9cb}
+  .chip.warn{border-color:color-mix(in srgb,var(--wait) 38%,transparent);color:#efdcb4}
+  .mtags{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:9px}
+  .mtag{font-size:9px;font-weight:800;letter-spacing:.05em;padding:3px 7px;border-radius:6px;border:1px solid var(--line);color:var(--dim);background:var(--card2)}
+  .gate{border-radius:11px;padding:10px 12px;font-size:11.5px;line-height:1.5;margin:12px 0 2px;border:1px solid}
+  .gate.reject{background:color-mix(in srgb,var(--short) 10%,transparent);border-color:color-mix(in srgb,var(--short) 40%,transparent);color:#f6c9cb}
+  .gate.ok{background:color-mix(in srgb,var(--long) 10%,transparent);border-color:color-mix(in srgb,var(--long) 38%,transparent);color:#bfefd6}
+  .drow{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .drow:last-child{border-bottom:none} .drow .dk{color:var(--mut)} .drow .dv{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+  .tiny{font-size:11.5px}
+  .dsetup{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line);cursor:pointer}
+  .dsetup:first-of-type{border-top:none} .dsetup:active{opacity:.6}
+  .dplan{color:var(--mut);font-size:12.5px;line-height:1.6;background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
+  /* window bars */
+  .winbars{display:flex;gap:8px;margin-top:4px}
+  .winbars .wb{flex:1;text-align:center}
+  .winbars .track{height:6px;border-radius:3px;background:#1b2730;overflow:hidden;margin-bottom:4px}
+  .winbars .fill{height:100%}
+  .winbars .wl2{font-size:9px;color:var(--dim);letter-spacing:.05em}
+  /* targets */
+  .tgt{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line);font-size:12.5px}
+  .tgt:last-child{border-bottom:none}
+  .tgt .tp{font-family:var(--mono);font-weight:700} .tgt .trr{color:var(--long);font-weight:800;font-size:11px}
+  /* LADDER — streamlined chart; tap/hover reveals level detail */
+  .lad{position:relative;margin:4px 0;height:300px;border:1px solid var(--line);border-radius:12px;
+    background:linear-gradient(180deg,var(--card2),var(--card));overflow:hidden;touch-action:none}
+  .lad svg{position:absolute;inset:0;width:100%;height:100%}
+  .lad .ovl{position:absolute;inset:0;pointer-events:none;z-index:2}
+  .lad .axis,.lad .axisb,.lad .hint{position:absolute;font-family:var(--mono);font-size:9px;color:var(--dim);z-index:2}
+  .lad .axis{top:5px;left:8px} .lad .axisb{bottom:5px;left:8px} .lad .hint{top:5px;right:8px;letter-spacing:.04em}
+  .ltag{position:absolute;right:6px;transform:translateY(-50%);font-family:var(--mono);font-size:9.5px;font-weight:800;padding:0 4px;border-radius:3px;background:var(--bg);white-space:nowrap}
+  .ltag.stop{color:var(--short)} .ltag.tgt{color:var(--long)} .ltag.px{color:#fff;background:var(--info);padding:1px 5px}
+  .lad .guide{position:absolute;left:0;right:0;height:0;border-top:1px dashed color-mix(in srgb,var(--info) 75%,transparent);display:none;z-index:3;pointer-events:none}
+  .lad .tip{position:absolute;left:8px;z-index:5;pointer-events:none;display:none;background:#1f2937;border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:10.5px;max-width:74%;transform:translateY(-50%);line-height:1.35;color:var(--mut)}
+  .lad .tip b{font-family:var(--mono);color:var(--ink)}
+  .closedbanner{background:color-mix(in srgb,var(--wait) 12%,transparent);border:1px solid color-mix(in srgb,var(--wait) 30%,transparent);
+    color:var(--wait);border-radius:12px;padding:13px;font-size:12.5px;text-align:center;font-weight:600;margin-top:16px}
+  .execrow{display:flex;gap:10px;margin-top:6px}
+  .exbtn{flex:1;border:none;border-radius:12px;padding:13px;font-weight:800;font-size:13px;letter-spacing:.03em}
+  .exbtn.yes{background:var(--long);color:#04140b} .exbtn.no{background:var(--card2);color:var(--mut);border:1px solid var(--line)}
+  .exbtn.confirm{width:100%;background:var(--info);color:#fff;margin-top:10px}
+  .exf{display:flex;align-items:center;gap:10px;margin-top:9px} .exf label{color:var(--mut);width:64px;font-size:12px}
+  .exf input{flex:1;background:var(--card2);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:10px;font:13px inherit;-webkit-user-select:text;user-select:text}
+  .exstat{font-size:12.5px;margin-bottom:8px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">DIMITRY</div>
+    <div class="status"><span class="live" id="live"></span> <span id="statusText">SYSTEM ONLINE</span></div>
+  </header>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <div class="herocar" id="herocar"><div class="herotrack" id="herotrack"></div></div>
+    <div class="dots" id="herodots"></div>
+    <div class="swipehint" id="swipehint"></div>
+    <div class="card"><div class="state" id="state"></div></div>
+    <div class="card wl"><div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px">
+      <span class="clbl">Watchlist</span><span class="clbl" id="wlupd" style="font-size:8px"></span></div><div id="watch"></div></div>
+    <div class="card"><div class="brain" id="brain"></div></div>
+  </section>
+
+  <!-- SETUPS -->
+  <section id="setupsView" class="hidden">
+    <div class="card"><div class="clbl" style="margin-bottom:4px">Primary setups · nearest to entry first</div><div id="allsetups"></div></div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section id="journalView" class="hidden">
+    <div class="card" id="logcard">
+      <div class="clbl" style="margin-bottom:8px">Log an entry</div>
+      <div class="kinds" id="kinds">
+        <div class="kind on" data-k="auto">✦ AUTO</div>
+        <div class="kind" data-k="execution">↗ ENTRY</div>
+        <div class="kind" data-k="exit">⤢ RESULT</div>
+        <div class="kind" data-k="observation">◉ SETUP</div>
+        <div class="kind" data-k="note">✎ NOTE</div>
+      </div>
+      <p class="jhelp" id="jhelp">Just type it — Dimitry reads the asset, direction, prices, R, size and your process tags out of plain English, and links it to the setup. Attach a screenshot or broker CSV too if you have one.</p>
+      <label class="ubtn" id="ulabel">＋ &nbsp;Choose file<input type="file" id="jfile" accept="image/*,.pdf,application/pdf,.csv,.txt,.md,.json,.tsv" hidden></label>
+      <div class="jfi" id="jfi"></div>
+      <textarea id="jnote" rows="3" placeholder="e.g. longed BTC at 62,871, stop 62,297, 0.05 lots — followed the plan"></textarea>
+      <div id="jpreview"></div>
+      <button class="usend" id="jsend">Log it</button>
+      <div class="jstatus" id="jstatus"></div>
+    </div>
+    <div class="card"><div class="clbl" style="margin-bottom:8px">Review · how the calls played out</div><div id="review"><span class="empty" style="padding:12px 0;display:block">loading…</span></div></div>
+    <div class="card"><div class="clbl" style="margin-bottom:8px">Journal · logged entries</div><div id="jrecent"><span class="empty" style="padding:14px 0;display:block">nothing yet</span></div></div>
+  </section>
+</div>
+
+<div id="sheet" class="sheet">
+  <div class="shhead"><button id="shback" class="shback">‹ Back</button><div class="shtitle" id="shtitle"></div><div style="width:64px"></div></div>
+  <div class="shbody" id="shbody"></div>
+</div>
+
+<nav id="nav">
+  <button data-tab="overview" class="on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>OVERVIEW</button>
+  <button data-tab="setupsView"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/></svg>SETUPS</button>
+  <button data-tab="journalView"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v18H6a2 2 0 0 1-2-2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>JOURNAL</button>
+</nav>
+
+<script>
+const $=id=>document.getElementById(id);
+let API=(location.origin&&/^https?:/.test(location.origin))?location.origin:"http://localhost:8848";
+const COL={long:"var(--long)",short:"var(--short)",wait:"var(--wait)",info:"var(--info)",sleep:"var(--sleep)"};
+const esc=s=>String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const accOf=d=>d==="short"?"var(--short)":d==="long"?"var(--long)":"var(--wait)";
+const wordOf=d=>d==="short"?"SHORT":d==="long"?"LONG":"WAIT";
+function fmt(n,dp){ if(n==null||isNaN(n))return "—"; return Number(n).toLocaleString(undefined,{minimumFractionDigits:dp||0,maximumFractionDigits:dp||0}); }
+function nextScanMin(){const n=new Date();return 5-(n.getUTCMinutes()%5)||5;}
+const STAGE_LBL={ "at-zone":"● ENTRY WINDOW OPEN", "continuation":"● CONTINUATION — re-entry open",
+  "running":"RUNNING — moved without you", "armed":"WAITING — price not at the zone yet" };
+/* early / precise / late from the operator's entry vs the setup zone (matches reconcile.js) */
+function timingOf(entry,zone,dir){
+  if(entry==null||!zone||!zone.length) return null;
+  const [lo,hi]=zone, tol=Math.max((hi-lo)*0.25, hi*0.0015);
+  if(entry>=lo-tol && entry<=hi+tol) return "PRECISE";
+  return dir==="short" ? (entry<lo-tol?"LATE":"EARLY") : (entry>hi+tol?"LATE":"EARLY");
+}
+/* per-user access token: from ?token= (persisted) or a previously saved one */
+let TOKEN="";
+try{ const u=new URLSearchParams(location.search).get("token");
+  TOKEN = u || localStorage.getItem("dimitry_token") || "";
+  if(u) localStorage.setItem("dimitry_token", u);
+}catch(e){}
+const H=extra=>Object.assign(TOKEN?{"x-dimitry-token":TOKEN}:{}, extra||{});
+let ME={ name:"owner", role:"owner", canWrite:true };   // updated from /api/whoami
+async function jget(p){const r=await fetch(API+p,{cache:"no-store",headers:H()});if(!r.ok)throw new Error(r.status);return r.json();}
+
+let DATA=null, allExec=[];
+const assetById=id=>DATA&&DATA.assets.find(a=>a.id===id);
+const setupByKey=key=>{ if(!DATA)return null; const[id]=key.split("#"); const a=assetById(id); return a&&a.setups.find(s=>s.setupKey===key); };
+const lastExec=key=>allExec.find(x=>x.setupKey===key);
+
+async function load(){
+  try{
+    DATA=await jget("/api/analysis");
+    try{ ME=await jget("/api/whoami"); }catch(e){ ME={name:"owner",role:"owner",canWrite:true}; }
+    document.body.classList.toggle("viewonly", !ME.canWrite);
+    $("live").className="live";
+    $("statusText").textContent = "SYSTEM ONLINE" + (ME.name&&ME.name!=="owner"?" · "+ME.name.toUpperCase():"") + (ME.canWrite?"":" · VIEW-ONLY");
+    renderHero(); renderState(); renderWatch(); renderSetups();
+    jget("/api/ascent").then(renderBrain).catch(()=>{});
+    jget("/api/execution").then(r=>{allExec=Array.isArray(r)?r:[];}).catch(()=>{});
+    if(sheetKey) refreshSheet();
+  }catch(e){
+    $("live").className="live off"; $("statusText").textContent="OFFLINE — START DIMITRY";
+    document.documentElement.style.setProperty("--acc","var(--sleep)");
+    $("herotrack").innerHTML=`<div class="heroslide"><div class="hero"><div class="hbadge">● NO CONNECTION</div>
+      <div class="ringwrap"><div class="hdir" style="font-size:32px">OFFLINE</div></div>
+      <div class="hstage dim">start the daemon &amp; reload</div></div></div>`;
+    $("herodots").innerHTML=""; $("swipehint").textContent="";
+  }
+}
+
+/* ---------------- HERO carousel (swipe across armed setups) ---------------- */
+let heroIdx=0, heroSlides=[];
+function renderHero(){
+  const root=document.documentElement.style;
+  heroSlides = (DATA.armed||[]).slice();
+  if(!heroSlides.length){
+    root.setProperty("--acc","var(--wait)");
+    $("herotrack").innerHTML=`<div class="heroslide"><div class="hero">
+      <div class="hbadge"><span class="bd"></span> STAND DOWN</div>
+      <div class="ringwrap"><svg class="ring" viewBox="0 0 230 132"><ellipse class="r1" cx="115" cy="66" rx="108" ry="58"/></svg>
+      <div class="hdir" style="font-size:34px">PROTECT<br>CAPITAL</div></div>
+      <div class="hstage">no armed setup on an open market</div></div></div>`;
+    $("herodots").innerHTML=""; $("swipehint").textContent="";
+    return;
+  }
+  heroIdx=Math.min(heroIdx,heroSlides.length-1);
+  $("herotrack").innerHTML=heroSlides.map(heroSlide).join("");
+  $("herodots").innerHTML=heroSlides.length>1?heroSlides.map((_,i)=>`<i class="${i===heroIdx?"on":""}"></i>`).join(""):"";
+  $("swipehint").textContent=heroSlides.length>1?`◂ swipe · ${heroSlides.length} armed setups · nearest to entry first ▸`:"";
+  positionHero();
+}
+function heroSlide(s){
+  const dp=(assetById(s.asset)||{}).dp||0;
+  const acc=accOf(s.dir);
+  const conv=Math.round((s.baseProb||0)*100);
+  const seg=28,on=Math.round(conv/100*seg);
+  const bar=Array.from({length:seg},(_,i)=>`<i class="${i<on?"on":""}"></i>`).join("");
+  const stage=s.stage, open=s.entryOpen;
+  const stageTxt=STAGE_LBL[stage]||"—";
+  const zone=s.zone?`${fmt(s.zone[0],dp)}–${fmt(s.zone[1],dp)}`:"—";
+  const t1=s.targets&&s.targets[0]?fmt(s.targets[0].p,dp):"—";
+  const glowG=Math.max(0.05,Math.min(1,(conv-40)/40));   // 40%→dim, 80%→max glow
+  return `<div class="heroslide"><div class="hero" style="--acc:${acc};--g:${glowG.toFixed(2)}">
+    <div class="hbadge"><span class="bd"></span> ${open?"ENTRY WINDOW":"ARMED SETUP"} · ${conv}%</div>
+    <div class="hasset">${esc(s.asset)} · ${esc((s.name||"").replace(/⭐+/g,"").replace(/PRIMARY/i,"").trim())}</div>
+    <div class="ringwrap">
+      <svg class="ring" viewBox="0 0 230 132"><ellipse class="r1" cx="115" cy="66" rx="108" ry="58"/><ellipse class="r2" cx="115" cy="66" rx="96" ry="49"/></svg>
+      <div class="hdir">${wordOf(s.dir)}</div>
+    </div>
+    <div class="hconv"><div class="v">${conv}%</div><div class="k">CONVICTION</div></div>
+    <div class="segbar">${bar}</div>
+    <div class="hstage ${open?"":"dim"}">${esc(stageTxt)}</div>
+    <div class="hgrid">
+      <div><div class="k">ZONE</div><div class="v">${zone}</div></div>
+      <div><div class="k">STOP</div><div class="v">${s.stop!=null?fmt(s.stop,dp):"—"}</div></div>
+      <div><div class="k">T1</div><div class="v">${t1}</div></div>
+    </div>
+    <div class="hmeta"><span>session <b>${esc(s.session||"—")}</b></span><span>armed <b>${esc(s.armedFor||"—")}</b></span><span>scan <b>${nextScanMin()}m</b></span></div>
+  </div></div>`;
+}
+function positionHero(){ $("herotrack").style.transform=`translateX(-${heroIdx*100}%)`;
+  const s=heroSlides[heroIdx]; if(s) document.documentElement.style.setProperty("--acc",accOf(s.dir));
+  $("herodots").querySelectorAll("i").forEach((d,i)=>d.classList.toggle("on",i===heroIdx)); }
+function heroGo(d){ if(!heroSlides.length)return; heroIdx=(heroIdx+d+heroSlides.length)%heroSlides.length; positionHero(); }
+(function(){ let x0=null,y0=null;
+  const el=$("herocar");
+  el.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});
+  el.addEventListener("touchend",e=>{ if(x0==null)return; const dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0;
+    if(Math.abs(dx)>42 && Math.abs(dx)>Math.abs(dy)){ heroGo(dx<0?1:-1); } x0=null; },{passive:true});
+  el.addEventListener("click",e=>{ const s=heroSlides[heroIdx]; if(s) openAsset(s.asset,s.setupKey); });
+})();
+
+function renderState(){
+  const st=DATA.story, upd=DATA.updated||"";
+  let line=st&&st.oneLine?st.oneLine:"Monitoring the board.";
+  $("state").innerHTML=`
+    <div class="radar"><b></b></div>
+    <div class="mid"><div class="clbl">Current read · ${esc(upd)}</div>
+      <div class="rn">${esc(line.length>150?line.slice(0,148)+"…":line)}</div></div>`;
+}
+
+function stateOf(a){
+  if(!a.marketOpen) return {tag:"CLOSED",col:"sleep",ic:{c:"sleep",t:"☾"},lean:"weekend",conf:null};
+  const su=a.primaryKey&&a.setups.find(s=>s.setupKey===a.primaryKey);
+  if(su){ const open=su.entryOpen, near=su.proximityPct!=null&&su.proximityPct<=0.03;
+    const tag = open?"WINDOW":near||su.stage==="continuation"?"ARMED":"WATCH";
+    const col = su.dir==="short"?"short":su.dir==="long"?"long":"wait";
+    const ic = {c:col,t:su.dir==="short"?"↓":su.dir==="long"?"↑":"◉"};
+    return {tag,col,ic,lean:(su.dir||"").toUpperCase()||"SETUP",conf:Math.round((su.baseProb||0)*100)};
+  }
+  if(a.hasAnalysis&&a.thesis){ const bull=a.thesis.probBull||50, dir=bull>52?"long":bull<48?"short":"flat";
+    return {tag:"WATCH",col:"info",ic:{c:"info",t:"◉"},lean:dir==="long"?"BULL LEAN":dir==="short"?"BEAR LEAN":"NEUTRAL",conf:Math.max(bull,100-bull)}; }
+  return {tag:"SLEEPING",col:"sleep",ic:{c:"sleep",t:"·"},lean:"—",conf:null};
+}
+function renderWatch(){
+  const order={WINDOW:0,ARMED:1,WATCH:2,SLEEPING:3,CLOSED:4};
+  const rows=DATA.assets.filter(a=>a.hasAnalysis||a.marketOpen).map(a=>({a,s:stateOf(a)}))
+    .sort((x,y)=>(order[x.s.tag]-order[y.s.tag])||((y.s.conf||0)-(x.s.conf||0)));
+  $("wlupd").textContent=DATA.updated?("updated "+DATA.updated):"";
+  $("watch").innerHTML=rows.map(({a,s})=>{
+    const cc=COL[s.ic.c], tc=COL[s.col];
+    return `<div class="row" data-id="${esc(a.id)}">
+      <div class="ic" style="color:${cc};border-color:${cc}">${s.ic.t}</div>
+      <div class="nm">${esc(a.id)}<span class="tag" style="color:${tc};background:color-mix(in srgb,${tc} 16%,transparent)">${s.tag}</span></div>
+      <div class="lean" style="color:${tc}">${esc(s.lean)}</div>
+      <div class="cf" style="color:${tc}">${s.conf==null?"—":s.conf+"%"}</div>
+      <span class="chev">›</span></div>`;
+  }).join("")||`<div class="empty">no assets tracked</div>`;
+  $("watch").querySelectorAll(".row").forEach(el=>el.onclick=()=>openAsset(el.dataset.id));
+}
+
+function renderSetups(){
+  const ps=DATA.primaries||[];
+  $("allsetups").innerHTML=ps.length?ps.map(s=>{
+    const dp=(assetById(s.asset)||{}).dp||0, cc=accOf(s.dir);
+    const open=s.entryOpen, stageTxt=STAGE_LBL[s.stage]||"";
+    const proxTxt = !s.marketOpen?"closed":open?"IN ZONE":s.proximityPct!=null?(s.proximityPct*100).toFixed(2)+"% away":"";
+    const zone=s.zone?`${fmt(s.zone[0],dp)}–${fmt(s.zone[1],dp)}`:"";
+    return `<div class="stp" data-key="${esc(s.setupKey)}"><div class="hd">
+      <span class="tag" style="color:${cc};background:color-mix(in srgb,${cc} 16%,transparent)">${wordOf(s.dir)}</span>
+      <b style="font-size:14px">${esc(s.asset)}</b>
+      <span class="prox" style="${open?"color:"+cc+";font-weight:800":""}">${esc(proxTxt)}</span>
+      <span style="font-weight:800;color:${cc};margin-left:8px">${Math.round((s.baseProb||0)*100)}%</span><span class="chev" style="margin-left:6px">›</span></div>
+      <div class="body">${esc((s.name||"").replace(/⭐+/g,"").trim())} · zone ${zone}${stageTxt?" · "+esc(stageTxt):""}</div></div>`;
+  }).join(""):`<div class="empty">nothing armed — protect capital</div>`;
+  $("allsetups").querySelectorAll(".stp").forEach(el=>el.onclick=()=>{const[id]=el.dataset.key.split("#");openAsset(id,el.dataset.key);});
+}
+
+/* ---------------- drill-down sheets ---------------- */
+let navStack=[], sheetKey=null;
+function openSheet(t){$("shtitle").textContent=t;$("sheet").classList.add("on");$("shbody").scrollTop=0;}
+function closeSheet(){$("sheet").classList.remove("on");navStack=[];sheetKey=null;}
+$("shback").onclick=()=>{navStack.pop();const t=navStack[navStack.length-1];
+  if(!t)return closeSheet(); if(t.type==="asset")renderAsset(t.id,t.focus); else renderSetup(t.key);};
+function refreshSheet(){ const t=navStack[navStack.length-1]; if(!t)return;
+  if(t.type==="asset")renderAsset(t.id,t.focus,true); else renderSetup(t.key,true); }
+
+function openAsset(id,focus){navStack.push({type:"asset",id,focus});renderAsset(id,focus);}
+function renderAsset(id,focus,keep){
+  const a=assetById(id); if(!a)return;
+  sheetKey="asset:"+id; openSheet(id);
+  let h=`<div class="dtitle">${esc(a.id)} · ${esc(a.name)}</div>`;
+  if(a.thesis){
+    h+=`<div class="chips">`;
+    (a.thesis.chips||[]).slice(0,4).forEach(c=>h+=`<span class="chip ${esc(c.cls||"")}">${esc(c.txt)}</span>`);
+    h+=`</div>`;
+  } else { h+=`<div class="dplan" style="margin-top:4px">${esc(a.line||"No analysis yet — monitoring.")}</div>`; }
+  if(!a.marketOpen) h+=`<div class="closedbanner">☾ ${esc(a.id)} market is CLOSED (weekend / outside the session) — no execution. Reopens Sun 21:00 UTC.</div>`;
+  const sts=a.setups||[];
+  h+=`<div class="clbl" style="margin:18px 2px 4px">Setups (${sts.length}) · tap for the full plan</div><div class="card" style="margin-bottom:0">`;
+  h+= sts.length ? sts.map(s=>{
+      const dp=a.dp||0, cc=accOf(s.dir), open=s.entryOpen;
+      const isPrimary=/PRIMARY/i.test(s.name||"");
+      const label=isPrimary?"PRIMARY":s.tier==="secondary"?"SECONDARY":"SETUP";
+      const proxTxt=!s.marketOpen?"closed":open?"● IN ZONE":s.proximityPct!=null?(s.proximityPct*100).toFixed(2)+"% away":"";
+      return `<div class="dsetup" data-key="${esc(s.setupKey)}">
+        <div class="ic" style="color:${cc};border-color:${cc};width:26px;height:26px;font-size:13px">${s.dir==="short"?"↓":s.dir==="long"?"↑":"–"}</div>
+        <div style="flex:1;min-width:0"><b style="font-size:11.5px;letter-spacing:.06em">${label}</b> <span style="color:${cc};font-weight:800">${wordOf(s.dir)}</span>
+          <div style="color:var(--dim);font-size:11px;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((s.name||"").replace(/⭐+/g,"").trim())} · ${s.zone?fmt(s.zone[0],dp)+"–"+fmt(s.zone[1],dp):""}</div></div>
+        <div style="text-align:right;flex:none"><span style="color:${cc};font-weight:800">${Math.round((s.baseProb||0)*100)}%</span>
+          <div style="font-size:9.5px;color:${open?cc:"var(--dim)"};font-family:var(--mono)">${esc(proxTxt)}</div></div>
+        <span class="chev">›</span></div>`;
+    }).join("") : `<div class="empty" style="padding:14px 0">no setup authored — monitoring the bias</div>`;
+  h+=`</div>`;
+  /* Level Ladder · touch-odds — ALL of this asset's setups overlaid */
+  if(a.hasAnalysis && a.levels && a.levels.length){
+    h+=`<div class="clbl" style="margin:18px 2px 2px">Level Ladder · touch-odds</div>`;
+    h+=ladderHTML(a, sts);
+  }
+  $("shbody").innerHTML=h;
+  $("shbody").scrollTop=0;
+  $("shbody").querySelectorAll(".dsetup").forEach(el=>el.onclick=()=>openSetup(el.dataset.key));
+  wireLadders($("shbody"));
+}
+
+function openSetup(key){navStack.push({type:"setup",key});renderSetup(key);}
+function renderSetup(key,keep){
+  const s=setupByKey(key); if(!s)return;
+  const assetId = s.asset || String(key).split("#")[0];
+  const a = assetById(assetId) || {dp:0, levels:[], recent:[]};
+  const dp = a.dp||0;
+  if(!s.asset) s.asset = assetId;                    // self-heal older payloads
+  sheetKey="setup:"+key; openSheet(assetId||"SETUP");
+  const dir=s.dir||"flat", acc=accOf(dir);
+  const conv=Math.round((s.baseProb||0)*100), seg=26, on=Math.round(conv/100*seg);
+  const bar=Array.from({length:seg},(_,i)=>`<i class="${i<on?"on":""}"></i>`).join("");
+  const open=s.entryOpen, stage=s.stage, stageTxt=STAGE_LBL[stage]||"—";
+  const isPrimary=/PRIMARY/i.test(s.name||"");
+  const entryBest = s.zone ? (dir==="short"?Math.max(s.zone[0],s.zone[1]):Math.min(s.zone[0],s.zone[1])) : null;
+  const stopDist = (entryBest!=null && s.stop!=null) ? Math.abs(entryBest-s.stop)/entryBest*100 : null;
+  const t1 = s.targets&&s.targets[0]?s.targets[0].p:null;
+  const liveRR = (s.price!=null && s.stop!=null && t1!=null && Math.abs(s.price-s.stop)>0)
+    ? (Math.abs(t1-s.price)/Math.abs(s.price-s.stop)) : null;
+  const entryNow = stage==="at-zone"?"PRECISE — price is IN the zone; wait for the confirmation candle, then run the gate"
+                 : stage==="continuation"?"CONTINUATION — pullback re-entry is open"
+                 : stage==="running"?"RUNNING — it moved without you; don't chase, wait for the next pullback"
+                 : "WAIT — approaching; let price reach the zone (do not front-run)";
+  const statusTxt = open?"LIVE":(s.status?String(s.status).toUpperCase():"WATCH");
+  const stageBadge = {"at-zone":"AT ZONE","continuation":"CONTINUATION","running":"RUNNING","armed":"WAITING"}[stage]||"";
+  const m=s.measured||null;
+  let h=`<div style="--acc:${acc}">
+    <div class="dword">${wordOf(dir)}</div>
+    <div class="dsub">${esc(s.asset)} · ${esc((s.name||"").replace(/⭐+/g,"").trim())}</div>
+    <div class="mtags">
+      <span class="mtag" style="color:${acc};border-color:${acc}">${isPrimary?"★ PRIMARY":s.tier==="secondary"?"SECONDARY":"SETUP"}</span>
+      ${s.tier?`<span class="mtag">${esc(String(s.tier).toUpperCase())}</span>`:""}
+      <span class="mtag" style="color:${open?acc:"var(--mut)"};border-color:${open?acc:"var(--line)"}">${esc(statusTxt)}</span>
+      ${stageBadge?`<span class="mtag" style="color:${open?acc:"var(--mut)"}">${stageBadge}</span>`:""}
+      ${s.hzn?`<span class="mtag">${esc(s.hzn)}</span>`:""}
+      ${s.scalpOK?`<span class="mtag">scalp ok</span>`:""}
+    </div>
+    <div class="hconv" style="margin-top:12px"><div class="v" style="color:${acc}">${conv}%</div><div class="k">CONVICTION${m&&m.cat?" · GRADE "+esc(m.cat):""}</div></div>
+    <div class="segbar" style="margin:9px 0 14px">${bar}</div></div>
+    <div class="card" style="margin-bottom:0">`;
+  if(s.zone)h+=`<div class="drow"><span class="dk">Entry zone</span><span class="dv">${fmt(s.zone[0],dp)} – ${fmt(s.zone[1],dp)}</span></div>`;
+  if(s.stop!=null)h+=`<div class="drow"><span class="dk">Stop</span><span class="dv">${fmt(s.stop,dp)}${stopDist!=null?` <span style="color:var(--dim);font-weight:600">· ${stopDist.toFixed(2)}%</span>`:""}</span></div>`;
+  if(s.size)h+=`<div class="drow"><span class="dk">Size</span><span class="dv">${esc(s.size)}</span></div>`;
+  if(liveRR!=null)h+=`<div class="drow"><span class="dk">Live R:R → T1</span><span class="dv" style="color:var(--long)">${liveRR.toFixed(1)}:1</span></div>`;
+  h+=`<div class="drow"><span class="dk">Entry window</span><span class="dv" style="color:${open?acc:"var(--mut)"};max-width:62%">${esc(stageTxt)}</span></div>`;
+  h+=`<div class="drow tiny"><span class="dk">Entry now</span><span class="dv" style="max-width:64%;color:${open?acc:"var(--mut)"}">${esc(entryNow)}</span></div>`;
+  h+=`<div class="drow tiny"><span class="dk">Session · set</span><span class="dv">${esc(s.session||"—")} · ${esc(s.armedFor||"—")} ago${DATA.updated?" · "+esc(DATA.updated):""}</span></div>`;
+  h+=`</div>`;
+  /* targets with R:R */
+  if(s.targets&&s.targets.length){
+    h+=`<div class="clbl" style="margin:16px 2px 4px">Targets · level ladder R:R</div><div class="card" style="margin-bottom:0">`;
+    s.targets.forEach(t=>h+=`<div class="tgt"><span class="tp">${fmt(t.p,dp)}</span><span style="flex:1;color:var(--mut);font-size:11.5px;margin:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.lbl||"")}</span><span class="trr">${esc(t.rr||"")}</span></div>`);
+    h+=`</div>`;
+  }
+  /* window (early/precise/late) */
+  if(s.window){
+    const w=s.window;
+    h+=`<div class="clbl" style="margin:16px 2px 4px">Entry timing edge</div><div class="winbars">
+      ${["early","precise","late"].map(k=>{const v=Math.round((w[k]||0)*100);
+        return `<div class="wb"><div class="track"><div class="fill" style="width:${v}%;background:${k==="precise"?acc:"var(--mut)"}"></div></div><div class="wl2">${k.toUpperCase()} ${v}%</div></div>`;}).join("")}
+    </div>`;
+  }
+  /* Signals · base rate measured (same figures as the web card) */
+  if(m){
+    h+=`<div class="clbl" style="margin:16px 2px 4px">Signals · base rate measured</div><div class="card" style="margin-bottom:0">
+      <div class="drow tiny"><span class="dk">Base rate · cat ${esc(m.cat||"—")}</span><span class="dv">n=${m.n} · trigger ${Math.round((m.trig||0)*100)}% · win ${Math.round((m.win||0)*100)}%</span></div>
+      <div class="drow tiny"><span class="dk">Avg outcome (R)</span><span class="dv" style="color:${(m.avgR||0)>=0?"var(--long)":"var(--short)"}">${(m.avgR||0)>=0?"+":""}${m.avgR}R</span></div>
+      <div class="drow tiny"><span class="dk">Model</span><span class="dv" style="max-width:64%">${open?"price IN zone · confirm then run the gate":"awaiting the zone"}</span></div>
+    </div>`;
+  }
+  /* Level Ladder — THIS setup only */
+  if(a.hasAnalysis && a.levels && a.levels.length){
+    h+=`<div class="clbl" style="margin:18px 2px 2px">Level Ladder · touch-odds</div>`;
+    h+=ladderHTML(a,[s]);
+  }
+  h+=`<div class="clbl" style="margin:18px 2px 6px">The plan</div><div class="dplan">${esc(s.note||"")}</div>`;
+
+  /* EXECUTION — only inside the live entry window on an open market */
+  const prev=lastExec(key);
+  const prevTxt=prev?(prev.intent==="executed"
+      ?`<div class="exstat" style="color:var(--long)">✓ You logged: EXECUTED${prev.params&&prev.params.timing?" · "+esc(prev.params.timing):""}${prev.params&&prev.params.entry?" @ "+esc(prev.params.entry):""}</div>`
+      :`<div class="exstat" style="color:var(--wait)">✗ You logged: SKIPPED</div>`):"";
+  h+=`<div class="clbl" style="margin:18px 2px 6px">Execution</div>${prevTxt}`;
+  if(!ME.canWrite){
+    h+=`<div class="closedbanner" style="color:var(--info);border-color:color-mix(in srgb,var(--info) 30%,transparent);background:color-mix(in srgb,var(--info) 10%,transparent)">👁 View-only access — you can read every setup and the plan, but logging is disabled for this account.</div>`;
+  } else if(!s.marketOpen){
+    h+=`<div class="closedbanner">☾ ${esc(s.asset)} market is CLOSED — no execution. Reopens when the session opens.</div>`;
+  } else if(!open){
+    h+=`<div class="closedbanner" style="color:var(--mut);border-color:var(--line);background:var(--card2)">
+      No execution window open — <b>${stage==="running"?"RUNNING (don't chase)":stage==="continuation"?"CONTINUATION":"WAITING for the zone"}</b>. Execute unlocks when price is in the zone.</div>`;
+  } else {
+    h+=`<div class="execrow"><button class="exbtn yes" id="ex-yes">✓ I executed</button><button class="exbtn no" id="ex-no">✗ Skipped</button></div>
+      <div id="exform" class="hidden">
+        <div class="exf"><label>Entry</label><input id="ex-entry" inputmode="decimal" value="${s.price!=null?s.price:(s.zone?s.zone[0]:"")}"></div>
+        <div class="exf"><label>Size %</label><input id="ex-size" inputmode="decimal" value="${esc(String(s.size||"").replace("%",""))}"></div>
+        <div class="exf"><label>Stop</label><input id="ex-stop" inputmode="decimal" value="${s.stop!=null?s.stop:""}"></div>
+        <label class="ubtn" id="ex-ulabel" style="padding:11px;font-size:13px;margin-top:9px">📎 &nbsp;Attach position screenshot (optional)<input type="file" id="ex-file" accept="image/*,.pdf,application/pdf,.csv,.txt" hidden></label>
+        <div class="jfi" id="ex-fi"></div>
+        <button class="exbtn confirm" id="ex-confirm">Confirm execution</button></div>
+      <div id="exresult" style="text-align:center;font-size:12.5px;margin-top:9px"></div>`;
+  }
+  $("shbody").innerHTML=h;
+  $("shbody").scrollTop=0;
+
+  let exFile=null;
+  if($("ex-file")) $("ex-file").onchange=async e=>{const f=e.target.files[0]; if(!f){exFile=null;$("ex-fi").textContent="";return;}
+    $("ex-fi").textContent="⏳ reading…"; try{exFile=await readFile(f); $("ex-fi").innerHTML="📎 "+esc(f.name);}catch(err){$("ex-fi").textContent="couldn't read that file";}};
+  const postExec=async (intent,params)=>{
+    try{
+      if(intent==="executed" && exFile){
+        await fetch(API+"/api/journal",{method:"POST",headers:H({"Content-Type":"application/json"}),
+          body:JSON.stringify(Object.assign({kind:"execution",note:`execution of ${s.asset} ${dir} (${params&&params.timing||""})`},exFile))}).catch(()=>{});
+      }
+      const r=await fetch(API+"/api/execution",{method:"POST",headers:H({"Content-Type":"application/json"}),
+        body:JSON.stringify({setupKey:key,asset:s.asset,dir,intent,params,window:stage||"manual"})});
+      if(!r.ok) throw 0;
+      const tag = intent==="executed"&&params&&params.timing ? " — <b>"+params.timing+"</b>" : "";
+      $("exresult").innerHTML='<span style="color:var(--long)">✓ logged'+tag+' — Dimitry will reconcile it with your fills</span>';
+      allExec.unshift({setupKey:key,asset:s.asset,intent,params,at:Date.now()});
+    }catch(e){ $("exresult").innerHTML='<span style="color:var(--short)">failed — is Dimitry reachable?</span>'; }
+  };
+  if($("ex-yes")) $("ex-yes").onclick=()=>$("exform").classList.remove("hidden");
+  if($("ex-no")) $("ex-no").onclick=()=>postExec("skipped",null);
+  if($("ex-confirm")) $("ex-confirm").onclick=()=>{
+    const entry=parseFloat(String($("ex-entry").value).replace(/,/g,""));
+    const timing=timingOf(entry, s.zone, dir);
+    postExec("executed",{entry:$("ex-entry").value.trim(),size:$("ex-size").value.trim(),stop:$("ex-stop").value.trim(),timing,at:Date.now()});
+  };
+  wireLadders($("shbody"));
+}
+
+/* ---------------- Level Ladder — streamlined chart + touch-odds ----------------
+   A clip-art price map: recent candles show HOW IT MOVES; the setup's zone/stop/
+   targets are drawn as bands & lines; levels are faint until you tap/hover, which
+   reveals the level's label + touch-odds. In a setup's own view only that setup
+   is drawn; in the asset view every setup is overlaid. */
+let __ladSeq=0; const LADDERS={};
+function ladderHTML(a, setups){
+  const min=a.ladderMin, max=a.ladderMax, dp=a.dp||0;
+  if(min==null||max==null||max<=min) return "";
+  const span=max-min, yOf=p=>Math.max(0,Math.min(100,((max-p)/span)*100));
+  const lid="lad"+(++__ladSeq);
+  const bars=(a.recent||[]).filter(b=>b&&b.c!=null);
+  let svg=`<svg viewBox="0 0 100 100" preserveAspectRatio="none">`;
+  // faint level lines (detail revealed on hover)
+  (a.levels||[]).forEach(l=>{ if(l.p<min||l.p>max) return; const y=yOf(l.p);
+    svg+=`<line x1="0" y1="${y}" x2="100" y2="${y}" stroke="${l.side==="R"?"var(--short)":"var(--long)"}" stroke-opacity="${l.key?0.34:0.14}" stroke-width="1" vector-effect="non-scaling-stroke" stroke-dasharray="${l.key?"":"2 3"}"/>`; });
+  // setup zones / stop / targets
+  setups.forEach(s=>{ if(!s.zone) return; const acc=accOf(s.dir);
+    const yh=yOf(Math.max(s.zone[0],s.zone[1])), yl=yOf(Math.min(s.zone[0],s.zone[1]));
+    svg+=`<rect x="0" y="${yh}" width="100" height="${Math.max(0.6,yl-yh)}" fill="${acc}" fill-opacity="0.15"/>`;
+    svg+=`<line x1="0" y1="${yh}" x2="100" y2="${yh}" stroke="${acc}" stroke-opacity="0.55" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+    svg+=`<line x1="0" y1="${yl}" x2="100" y2="${yl}" stroke="${acc}" stroke-opacity="0.55" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+    if(s.stop!=null && s.stop>=min && s.stop<=max)
+      svg+=`<line x1="0" y1="${yOf(s.stop)}" x2="100" y2="${yOf(s.stop)}" stroke="var(--short)" stroke-width="1" vector-effect="non-scaling-stroke" stroke-dasharray="4 3"/>`;
+    (s.targets||[]).forEach(t=>{ if(t.p<min||t.p>max) return;
+      svg+=`<line x1="0" y1="${yOf(t.p)}" x2="100" y2="${yOf(t.p)}" stroke="var(--long)" stroke-width="1" vector-effect="non-scaling-stroke" stroke-dasharray="4 3"/>`; });
+  });
+  // recent price action — wicks + close path + live dot
+  if(bars.length){ const N=bars.length;
+    bars.forEach((b,i)=>{ const cx=(i+0.5)/N*100, hy=b.h!=null?yOf(b.h):yOf(b.c), ly=b.l!=null?yOf(b.l):yOf(b.c);
+      svg+=`<line x1="${cx}" y1="${hy}" x2="${cx}" y2="${ly}" stroke="var(--mut)" stroke-opacity="0.5" stroke-width="1" vector-effect="non-scaling-stroke"/>`; });
+    const pts=bars.map((b,i)=>`${(i+0.5)/N*100},${yOf(b.c)}`).join(" ");
+    svg+=`<polyline points="${pts}" fill="none" stroke="var(--ink)" stroke-opacity="0.9" stroke-width="1.7" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>`;
+    const last=bars[bars.length-1];
+    svg+=`<circle cx="${(N-0.5)/N*100}" cy="${yOf(last.c)}" r="2.6" fill="var(--info)" vector-effect="non-scaling-stroke"/>`;
+  }
+  svg+=`</svg>`;
+  // crisp HTML overlay labels (SVG text would stretch): stop, targets, live price
+  let ov="";
+  setups.forEach(s=>{
+    if(s.stop!=null && s.stop>=min && s.stop<=max) ov+=`<div class="ltag stop" style="top:${yOf(s.stop)}%">✕ ${fmt(s.stop,dp)}</div>`;
+    (s.targets||[]).forEach((t,i)=>{ if(t.p<min||t.p>max) return; ov+=`<div class="ltag tgt" style="top:${yOf(t.p)}%">T${i+1} ${fmt(t.p,dp)}</div>`; });
+  });
+  const px=(setups[0]&&setups[0].price!=null)?setups[0].price:a.price;
+  if(px!=null && px>=min && px<=max) ov+=`<div class="ltag px" style="top:${yOf(px)}%">${fmt(px,dp)}</div>`;
+  LADDERS[lid]={min,max,dp,levels:(a.levels||[]).filter(l=>l.p>=min&&l.p<=max)};
+  return `<div class="lad" id="${lid}" data-lad="${lid}">
+    <div class="axis">${fmt(max,dp)}</div><div class="axisb">${fmt(min,dp)}</div>
+    <div class="hint">◦ hold to read levels</div>
+    ${svg}<div class="ovl">${ov}</div>
+    <div class="guide" id="${lid}-g"></div><div class="tip" id="${lid}-t"></div></div>`;
+}
+/* attach touch/hover level-readout to every ladder just rendered */
+function wireLadders(root){
+  (root||document).querySelectorAll(".lad").forEach(el=>{
+    const cfg=LADDERS[el.dataset.lad]; if(!cfg||el.__wired) return; el.__wired=true;
+    const g=$(el.id+"-g"), t=$(el.id+"-t");
+    const move=clientY=>{ const r=el.getBoundingClientRect(); let y=Math.max(0,Math.min(r.height,clientY-r.top));
+      const price=cfg.max-(y/r.height)*(cfg.max-cfg.min);
+      let best=null,bd=1e9; cfg.levels.forEach(l=>{const d=Math.abs(l.p-price);if(d<bd){bd=d;best=l;}});
+      if(best){ const yl=((cfg.max-best.p)/(cfg.max-cfg.min))*r.height;
+        g.style.display="block"; g.style.top=yl+"px";
+        t.style.display="block"; t.style.top=Math.max(16,Math.min(r.height-16,yl))+"px";
+        t.innerHTML=`<b>${fmt(best.p,cfg.dp)}</b> · touch ${esc(best.prob||"—")}<br>${esc((best.lbl||"").replace(/⭐+/g,"").trim())}`;
+      } else { g.style.display="none"; t.style.display="none"; }
+    };
+    const end=()=>{ g.style.display="none"; t.style.display="none"; };
+    el.addEventListener("touchstart",e=>move(e.touches[0].clientY),{passive:true});
+    el.addEventListener("touchmove",e=>{move(e.touches[0].clientY);e.preventDefault();},{passive:false});
+    el.addEventListener("touchend",end); el.addEventListener("touchcancel",end);
+    el.addEventListener("mousemove",e=>move(e.clientY)); el.addEventListener("mouseleave",end);
+  });
+}
+
+function renderBrain(a){
+  if(!a||typeof a!=="object")return;
+  const eq=a.eq!=null?a.eq:"—", mode=(a.mode||"—").toUpperCase(), eff=a.efficiency!=null?Math.round(a.efficiency*100):null;
+  const seg=14, on=eff==null?0:Math.round(eff/100*seg);
+  const eb=Array.from({length:seg},(_,i)=>`<i class="${i<on?"on":""}"></i>`).join("");
+  $("brain").innerHTML=`
+    <svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9 3a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 1 4 3 3 0 0 0 3 3 3 3 0 0 0 3-1V3z"/><path d="M15 3a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-1 4 3 3 0 0 1-3 3 3 3 0 0 1-3-1V3z"/></svg>
+    <div class="col"><div class="k">DIMITRY BRAIN</div><div class="v">EQ ${eq}</div><div class="k" style="margin-top:2px">${mode}</div></div>
+    <div class="col"><div class="k">EFFICIENCY</div><div class="v" style="color:var(--info)">${eff==null?"—":eff+"%"}</div><div class="effbar">${eb}</div></div>
+    <div class="col"><div class="k">UPDATED</div><div class="v" style="font-size:13px">just now</div>
+      <svg class="ecg" viewBox="0 0 100 20"><polyline points="0,10 26,10 32,3 38,17 44,10 62,10 68,6 74,14 80,10 100,10"/></svg></div>`;
+}
+
+/* ---- journal upload ---- */
+let jPayload=null;
+function readFile(file){
+  return new Promise((res,rej)=>{ const r=new FileReader();
+    r.onerror=()=>rej(r.error);
+    const isText=/^text\/|csv|json|tsv|markdown/i.test(file.type)||/\.(csv|txt|md|json|tsv)$/i.test(file.name);
+    r.onload=()=>res(isText?{name:file.name,mime:file.type||"text/plain",text:String(r.result)}
+                           :{name:file.name,mime:file.type||"application/octet-stream",b64:String(r.result).replace(/^data:[^,]+,/,"")});
+    isText?r.readAsText(file):r.readAsDataURL(file);
+  });
+}
+const jf=$("jfile");
+if(jf) jf.onchange=async e=>{ const f=e.target.files[0]; if(!f){jPayload=null;$("jfi").textContent="";return;}
+  $("jfi").textContent="⏳ reading "+f.name+"…";
+  try{ jPayload=await readFile(f); $("jfi").innerHTML=`📎 ${esc(f.name)} · ${(f.size/1024).toFixed(0)} KB`; $("ulabel").firstChild.textContent="＋  Change file"; }
+  catch(err){ $("jfi").textContent="couldn't read that file"; jPayload=null; }
+};
+/* entry-type selector — "auto" lets the parser decide from the words */
+let jKind="auto";
+const KIND_HELP={
+  auto:"Just type it — Dimitry reads the asset, direction, prices, R, size and your process tags out of plain English, and links it to the setup.",
+  execution:"Log an ENTRY you took: asset, direction, fill, stop, size. e.g. “longed BTC at 62,871, stop 62,297, 0.05 lots”.",
+  exit:"Log a RESULT: where you got out and what it paid. e.g. “closed the BTC long at 63,325 from 62,871 — +2R, followed the plan”.",
+  observation:"A note about a SETUP or level — it links to the asset. e.g. “BTC#0 still armed, 63,325 is the magnet above”.",
+  note:"A free thought — psychology, process, anything. It's kept and searchable, not forced into trade fields."
+};
+document.querySelectorAll("#kinds .kind").forEach(el=>el.onclick=()=>{
+  document.querySelectorAll("#kinds .kind").forEach(k=>k.classList.toggle("on",k===el));
+  jKind=el.dataset.k; $("jhelp").textContent=KIND_HELP[jKind]||""; jPreview();
+});
+/* live read-back so the operator SEES what got understood before sending */
+function jPreview(){
+  const t=$("jnote").value.trim(), el=$("jpreview");
+  if(!t){ el.innerHTML=""; return; }
+  const p=parseLocal(t);
+  const f=[];
+  if(p.asset) f.push(`<span class="jf link"><b>${esc(p.asset)}</b></span>`);
+  if(p.dir) f.push(`<span class="jf" style="color:${accOf(p.dir)}"><b>${p.dir.toUpperCase()}</b></span>`);
+  if(p.entry!=null) f.push(`<span class="jf">entry <b>${p.entry.toLocaleString()}</b></span>`);
+  if(p.exit!=null) f.push(`<span class="jf">exit <b>${p.exit.toLocaleString()}</b></span>`);
+  if(p.stop!=null) f.push(`<span class="jf">stop <b>${p.stop.toLocaleString()}</b></span>`);
+  p.targets.forEach(t2=>f.push(`<span class="jf">T${t2.n} <b>${t2.p.toLocaleString()}</b></span>`));
+  if(p.size!=null) f.push(`<span class="jf">size <b>${p.size}${p.sizeUnit||""}</b></span>`);
+  if(p.r!=null) f.push(`<span class="jf ${p.r>=0?"good":"bad"}"><b>${p.r>0?"+":""}${p.r}R</b></span>`);
+  p.tags.forEach(tg=>f.push(`<span class="jf ${tg.good===true?"good":tg.good===false?"bad":""}">${esc(tg.tag)}</span>`));
+  el.innerHTML = f.length
+    ? `<div class="clbl" style="margin:11px 2px 5px">Dimitry reads</div><div class="jfields">${f.join("")}</div>`
+    : `<div class="jatt" style="margin-top:9px">kept as a plain note</div>`;
+}
+/* a light mirror of the server parser, for instant feedback while typing */
+function parseLocal(t){
+  const A=[["BTC",/\b(btc|bitcoin|xbt)\b/i],["XAUUSD",/\b(xauusd|gold|xau)\b/i],["XAGUSD",/\b(xagusd|silver|xag)\b/i],
+    ["US500",/\b(us500|s&?p ?500|spx)\b/i],["US100",/\b(us100|nas(daq)?|ndx)\b/i],["EURUSD",/\b(eurusd|fiber)\b/i],
+    ["GBPUSD",/\b(gbpusd|cable|sterling)\b/i],["USDJPY",/\b(usdjpy|yen)\b/i]];
+  const TG=[["followed-plan",true,/\b(followed (the )?plan|as written)\b/i],["patient",true,/\b(waited|patience)\b/i],
+    ["chased",false,/\b(chased?|fomo)\b/i],["revenge",false,/\b(revenge|tilt)\b/i],["moved-stop",false,/\b(moved (my |the )?stop|no stop)\b/i],
+    ["cut-early",false,/\b(cut (it )?early|closed early|bailed)\b/i],["oversized",false,/\b(over ?sized?|too big)\b/i],
+    ["stop-to-be",true,/\b(stop to (be|break.?even)|risk.?free)\b/i],["skipped",null,/\b(skipped?|passed on)\b/i]];
+  const N="(\\d[\\d,]*(?:\\.\\d+)?)", num=s=>{const n=parseFloat(String(s).replace(/[,$\s]/g,""));return isFinite(n)?n:null;};
+  const G="(?:[^\\n]{0,18}?)", LB="(?<![A-Za-z#\\d.,])";
+  const at=v=>{const m=new RegExp("\\b(?:"+v+")\\b"+G+"(?:at|@|:|for|around|near)?\\s*\\$?\\s*"+LB+N,"i").exec(t);
+    if(!m)return null; if(/\b(stop|sl|target|tp|t\d)\b/i.test(m[0].slice(0,m[0].lastIndexOf(m[1]))))return null; return num(m[1]);};
+  const grab=re=>{const m=re.exec(t);return m?num(m[1]):null;};
+  const o={asset:null,dir:null,entry:null,exit:null,stop:null,targets:[],size:null,sizeUnit:null,r:null,tags:[]};
+  for(const[id,re]of A){ if(re.test(t)){o.asset=id;break;} }
+  const L=/\b(long|longs|longed|bought|buy|buying)\b/i.test(t), S=/\b(short|shorts|shorted|sold|sell|fade|faded)\b/i.test(t);
+  o.dir=L&&!S?"long":S&&!L?"short":L?"long":S?"short":null;
+  o.entry=at("entry|entered|enter|filled|fill|opened|open|bought|buy|longed|shorted|took")??grab(new RegExp("@\\s*\\$?\\s*"+N,"i"));
+  o.exit=at("exit|exited|closed|close|sold at|took profit|banked at");
+  o.stop=grab(new RegExp("(?:stop|sl)(?:\\s*(?:was|is|at|@|:|to))?\\s*\\$?\\s*"+LB+N,"i"));
+  for(const m of t.matchAll(new RegExp("\\bt(\\d)\\s*(?:at|@|:)?\\s*\\$?\\s*"+LB+N,"gi"))) o.targets.push({n:+m[1],p:num(m[2])});
+  const sl=new RegExp(N+"\\s*(lots?|contracts?)","i").exec(t), sp=/(\d+(?:\.\d+)?)\s*%/.exec(t);
+  if(sl){o.size=num(sl[1]);o.sizeUnit="lots";} else if(sp){o.size=parseFloat(sp[1]);o.sizeUnit="%";}
+  const rm=/([+-]?\d+(?:\.\d+)?)\s*R\b/i.exec(t); if(rm)o.r=parseFloat(rm[1]);
+  if(o.r==null&&o.entry!=null&&o.exit!=null&&o.stop!=null){const risk=Math.abs(o.entry-o.stop);
+    if(risk>0)o.r=+(((o.dir==="short"?o.entry-o.exit:o.exit-o.entry))/risk).toFixed(2);}
+  for(const[tag,good,re]of TG){ if(re.test(t)) o.tags.push({tag,good}); }
+  return o;
+}
+if($("jnote")) $("jnote").addEventListener("input",jPreview);
+
+async function sendJournal(){
+  const note=$("jnote").value.trim();
+  if(!jPayload && !note){ $("jstatus").innerHTML='<span style="color:var(--wait)">add a file or a note first</span>'; return; }
+  const btn=$("jsend"); btn.disabled=true; $("jstatus").innerHTML='<span style="color:var(--mut)">logging…</span>';
+  try{
+    const payload=Object.assign({note,kind:(jKind==="auto"?null:jKind)}, jPayload||{});
+    const r=await fetch(API+"/api/journal",{method:"POST",headers:H({"Content-Type":"application/json"}),body:JSON.stringify(payload)});
+    if(!r.ok) throw new Error(r.status);
+    $("jstatus").innerHTML='<span style="color:var(--long)">✓ logged &amp; filed — it now counts in your review</span>';
+    $("jnote").value=""; $("jfi").textContent=""; $("ulabel").firstChild.textContent="＋  Choose file"; jf.value=""; jPayload=null;
+    jPreview(); loadJournal();
+  }catch(e){ $("jstatus").innerHTML='<span style="color:var(--short)">upload failed — is Dimitry reachable?</span>'; }
+  finally{ btn.disabled=false; }
+}
+if($("jsend")) $("jsend").onclick=sendJournal;
+
+const KIND_BADGE={execution:"↗ ENTRY",exit:"⤢ RESULT",observation:"◉ SETUP",note:"✎ NOTE",trade:"⤢ TRADE"};
+let jDigest=null;
+async function loadJournal(){
+  try{
+    const r=await jget("/api/journal?digest=1");
+    const rows=r.entries||r; jDigest=r.digest||null;
+    $("jrecent").innerHTML = rows.length ? rows.map(jentCard).join("")
+      : `<span class="empty" style="padding:14px 0;display:block">nothing yet — log your first entry above</span>`;
+  }catch(e){ $("jrecent").innerHTML=`<span class="empty" style="padding:14px 0;display:block">can't reach Dimitry</span>`; }
+  loadReview();
+}
+/* one formatted card per logged entry — the structured read-back */
+function jentCard(x){
+  const p=x.parsed||{}, when=new Date(x.at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"});
+  const kind=p.kind||x.kind||"note";
+  const acc=p.dir?accOf(p.dir):"var(--info)";
+  const f=[];
+  if(p.asset) f.push(`<span class="jf link"><b>${esc(p.asset)}</b></span>`);
+  if(p.dir) f.push(`<span class="jf" style="color:${acc}"><b>${p.dir.toUpperCase()}</b></span>`);
+  if(p.entry!=null) f.push(`<span class="jf">entry <b>${p.entry.toLocaleString()}</b></span>`);
+  if(p.exit!=null) f.push(`<span class="jf">exit <b>${p.exit.toLocaleString()}</b></span>`);
+  if(p.stop!=null) f.push(`<span class="jf">stop <b>${p.stop.toLocaleString()}</b></span>`);
+  (p.targets||[]).forEach(t=>f.push(`<span class="jf">T${t.n} <b>${(t.p||0).toLocaleString()}</b></span>`));
+  if(p.size!=null) f.push(`<span class="jf">size <b>${p.size}${p.sizeUnit||""}</b></span>`);
+  if(p.r!=null) f.push(`<span class="jf ${p.r>=0?"good":"bad"}"><b>${p.r>0?"+":""}${p.r}R</b></span>`);
+  if(p.pnl!=null) f.push(`<span class="jf ${p.pnl>=0?"good":"bad"}"><b>${p.pnl>0?"+":"-"}$${Math.abs(p.pnl)}</b></span>`);
+  if(p.outcome) f.push(`<span class="jf ${p.outcome==="win"?"good":p.outcome==="loss"?"bad":""}">${esc(p.outcome)}</span>`);
+  (p.tags||[]).forEach(t=>f.push(`<span class="jf ${t.good===true?"good":t.good===false?"bad":""}">${esc(t.tag)}</span>`));
+  const link=x.setupKey||p.setupRef;
+  return `<div class="jent"${link?` data-key="${esc(link)}" style="cursor:pointer"`:""}>
+    <div class="jh"><span class="kb" style="${p.dir?`color:${acc};border-color:${acc}`:""}">${KIND_BADGE[kind]||"✎ NOTE"}</span>
+      <span class="jsum" style="color:${p.dir?acc:"var(--ink)"}">${esc(x.summary||"entry")}</span>
+      <span class="jwhen">${when}</span></div>
+    ${x.note?`<div class="jtext">${esc(x.note)}</div>`:""}
+    ${f.length?`<div class="jfields">${f.join("")}</div>`:""}
+    ${x.original?`<div class="jatt">📎 ${esc(x.original)} · <span style="color:${x.processed?"var(--long)":"var(--wait)"}">${x.processed?"FILED":"PENDING"}</span></div>`:""}
+    ${link?`<div class="jatt" style="color:var(--info)">↳ linked to ${esc(link)} · tap to open</div>`:""}
+  </div>`;
+}
+
+/* consolidated Review — scorecard stats + how recent calls/executions played out */
+async function loadReview(){
+  const el=$("review"); let h="";
+  /* your own logged record first — measured from the journal */
+  if(jDigest && jDigest.n){
+    const d=jDigest;
+    h+=`<div class="rstat">
+      <div class="b"><div class="big">${d.n}</div><div class="lbl">entries logged</div></div>
+      <div class="b"><div class="big" style="color:${d.totalR>=0?"var(--long)":"var(--short)"}">${d.totalR>0?"+":""}${d.totalR}R</div><div class="lbl">net, ${d.scored} scored</div></div>
+      <div class="b"><div class="big">${d.winRate==null?"—":d.winRate+"%"}</div><div class="lbl">${d.wins}W / ${d.losses}L</div></div>
+    </div>`;
+    if(d.leaks.length||d.strengths.length){
+      h+=`<div class="jfields" style="margin:9px 0 2px">`
+        + d.leaks.map(l=>`<span class="jf bad">${esc(l.tag)} ×${l.n}</span>`).join("")
+        + d.strengths.map(s=>`<span class="jf good">${esc(s.tag)} ×${s.n}</span>`).join("")
+        + `</div><div class="jatt">red = leaks the system will hold you to · green = what's working</div>`;
+    }
+  }
+  const sc=DATA&&DATA.scorecard;
+  if(sc&&sc.stats){ h+=`<div class="clbl" style="margin:14px 2px 6px">Dimitry's own calls</div><div class="rstat">`+sc.stats.slice(0,4).map(s=>`<div class="b"><div class="big">${esc(s.big)}</div><div class="lbl">${esc(s.lbl)}</div></div>`).join("")+`</div>`;
+    if(sc.note)h+=`<div class="dplan tiny" style="margin:10px 0 4px">${esc(sc.note.length>240?sc.note.slice(0,238)+"…":sc.note)}</div>`; }
+  // recent executions (what you actually did) + reconciliation outcome if present
+  let recon=null; try{ recon=await jget("/api/reconcile"); }catch(e){}
+  const records=(recon&&recon.records)||[];
+  let rows=[];
+  (allExec||[]).slice(0,8).forEach(x=>{
+    const rec=records.find(r=>r.setupKey===x.setupKey)||{};
+    const col=x.intent==="executed"?(rec.class==="off-plan"?"var(--wait)":"var(--long)"):"var(--dim)";
+    const r=rec.rMultiple!=null?(rec.rMultiple>0?"+":"")+rec.rMultiple+"R":(x.params&&x.params.timing?x.params.timing:"");
+    rows.push({dir:col,nn:`${esc(x.asset||"")} ${esc((x.dir||"").toUpperCase())}`,
+      ss:x.intent==="executed"?`executed${rec.class?" · "+rec.class:""}`:"skipped (timidity signal)",
+      rr:r, rc:col});
+  });
+  if(rows.length){ h+=`<div style="margin-top:6px">`+rows.map(r=>`<div class="rev">
+    <div class="rd" style="background:${r.rc}"></div>
+    <div class="rmid"><div class="rn">${r.nn}</div><div class="rs">${r.ss}</div></div>
+    <div class="rr" style="color:${r.rc}">${esc(r.rr)}</div></div>`).join("")+`</div>`;
+  } else if(!h){ h=`<span class="empty" style="padding:12px 0;display:block">log an entry — your trades and process will summarise here</span>`; }
+  el.innerHTML=h;
+  /* journal entries linked to a setup open it */
+  $("jrecent").querySelectorAll(".jent[data-key]").forEach(el2=>el2.onclick=()=>{
+    const k=el2.dataset.key, [id]=k.split("#");
+    if(assetById(id)) openAsset(id,k);
+  });
+}
+
+/* tabs */
+document.querySelectorAll("#nav button").forEach(btn=>btn.onclick=()=>{
+  document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b===btn));
+  ["overview","setupsView","journalView"].forEach(id=>$(id).classList.toggle("hidden",id!==btn.dataset.tab));
+  if(btn.dataset.tab==="journalView") loadJournal();
+  window.scrollTo(0,0);
+});
+document.querySelector("header .status").onclick=load;
+load(); setInterval(load,30000);
+</script>
+</body>
+</html>
