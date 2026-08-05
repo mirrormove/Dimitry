@@ -1,3 +1,4 @@
+
 # Dimitry — a local trading-intelligence engine
 
 Dimitry is a **zero-dependency, single-machine** trading-analysis brain: a small Node
@@ -87,3 +88,7 @@ See `Dimitry — Access & Sharing.md` for the step-by-step.
 ## License
 
 Private. All rights reserved unless a `LICENSE` file says otherwise.
+
+# Dimitry
+Dimitry is a **zero-dependency, single-machine** trading-analysis brain: a small Node server that turns authored market analysis into live, state-aware setups and serves them to a desktop dashboard and a phone app. It watches beliefs, scores its own calls, reconciles what you actually did against what it planned, and learns from the gap.
+d630c3a51ce096815ff2521618eb2106c089dfa9
