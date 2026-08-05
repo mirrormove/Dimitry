@@ -491,9 +491,23 @@ if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then
           if(zone && price!=null){ const [lo,hi]=zone;
             proximityPct = live.entryOpen ? 0 : Math.min(Math.abs(price-lo),Math.abs(price-hi))/price; }
           const estTs = s.established ? Date.parse(s.established) : null;
+          /* LIVE conviction — fluid: starts at the authored base, then reacts to where
+             price is RIGHT NOW. Rises as price nears the zone, jumps in-zone, decays if
+             it runs past. Recomputed every request, so it moves in real time. */
+          const base = (typeof s.baseProb === "number") ? s.baseProb : 0.5;
+          let lc = base + 0.05;                                   // slight upward sensitivity
+          if(live.stage === "at-zone")           lc += 0.16;
+          else if(live.stage === "continuation") lc += 0.11;
+          else if(live.stage === "running")      lc -= 0.14;
+          else if(proximityPct != null)          lc += 0.14 * Math.max(0, 1 - proximityPct/0.03);
+          if(!open) lc = base;                                    // closed market → static base
+          lc = Math.max(0.05, Math.min(0.95, lc));
+          const convGrade = lc>=0.75?"A":lc>=0.62?"B":lc>=0.50?"C":"D";
+          const convTrend = lc>base+0.02?"up":lc<base-0.02?"down":"flat";
           return Object.assign({}, s, { dir, idx, setupKey:a.id+"#"+idx, asset:a.id, assetName:a.name,
             isPrimary: /PRIMARY/i.test(s.name||"") || idx===0,
             stage:live.stage, entryOpen:live.entryOpen, price, proximityPct,
+            liveConviction:lc, convGrade, convTrend,
             session:sessionOf(estTs), generatedAt:estTs,
             armedForMs: estTs?now-estTs:null, armedFor: humanDur(estTs?now-estTs:null),
             marketOpen:open });
@@ -509,18 +523,29 @@ if("serviceWorker" in navigator){navigator.serviceWorker.getRegistrations().then
       const primaries = assets.filter(a=>a.hasAnalysis && a.primaryKey)
         .map(a => { const s = a.setups.find(x=>x.setupKey===a.primaryKey);
                     return Object.assign({}, s, { asset:a.id, assetName:a.name }); })
+        /* MARKET-CENTRIC ranking: open markets first, then by LIVE conviction across
+           every asset (not BTC by default) — the strongest live read leads. */
         .sort((x,y) =>
           (y.marketOpen-x.marketOpen) ||
-          ((stageRank[x.stage]??9)-(stageRank[y.stage]??9)) ||
-          ((x.proximityPct==null?9:x.proximityPct)-(y.proximityPct==null?9:y.proximityPct)) ||
-          ((y.baseProb||0)-(x.baseProb||0)) );
+          ((y.liveConviction||0)-(x.liveConviction||0)) ||
+          ((x.proximityPct==null?9:x.proximityPct)-(y.proximityPct==null?9:y.proximityPct)) );
 
-      const armed = primaries.filter(s => s.marketOpen &&
-        (s.entryOpen || s.stage==="continuation" || (s.proximityPct!=null && s.proximityPct<=0.03)));
+      /* ARMED = genuinely AT a trigger on an open market (in-zone or a live pullback).
+         This is what the web calls an ACT window — anything merely "approaching" is a
+         watch, not a trade, so the mobile verdict matches the web's NO-TRADE read. */
+      const armed = primaries.filter(s => s.marketOpen && (s.entryOpen || s.stage==="continuation"));
+      const approaching = primaries.filter(s => s.marketOpen && !s.entryOpen && s.stage!=="continuation"
+        && s.proximityPct!=null && s.proximityPct<=0.03);
+      const verdict = armed.length
+        ? { state:"act", asset:armed[0].asset, dir:armed[0].dir, setupKey:armed[0].setupKey,
+            text:`ACT · ${armed[0].asset} ${(armed[0].dir||"").toUpperCase()} at the trigger` }
+        : { state:"no-trade", setupKey:(approaching[0]||{}).setupKey||null, asset:(approaching[0]||{}).asset||null,
+            text: approaching.length ? `NO TRADE · watching ${approaching[0].asset} into its zone`
+                                      : "NO TRADE · protect capital" };
 
-      return send(res, 200, JSON.stringify({ updated:V.updated, now,
+      return send(res, 200, JSON.stringify({ updated:V.updated, now, verdict,
         story:V.story||null, scorecard:V.scorecard||null, positions:V.positions||null,
-        catalysts:V.catalysts||null, assets, primaries, armed }, null, 2), "application/json");
+        catalysts:V.catalysts||null, assets, primaries, armed, approaching }, null, 2), "application/json");
     }catch(e){ return send(res, 500, "analysis error: "+e.message); }
   }
 

@@ -27,21 +27,50 @@
   .live.off{background:var(--short);animation:none}
   @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,191,122,.5)}70%{box-shadow:0 0 0 7px rgba(47,191,122,0)}100%{box-shadow:0 0 0 0 rgba(47,191,122,0)}}
 
-  /* HERO carousel */
-  .herocar{position:relative;overflow:hidden;border-radius:22px;margin-bottom:8px;touch-action:pan-y}
-  .herotrack{display:flex;transition:transform .32s cubic-bezier(.4,0,.2,1)}
-  .heroslide{min-width:100%;flex:none}
+  /* session strip — under the status line, across the page */
+  .sessbar{display:flex;align-items:stretch;gap:0;margin:10px 0 4px;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--card2)}
+  .sess{flex:1;text-align:center;padding:6px 2px;font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--dim);border-left:1px solid var(--line);position:relative}
+  .sess:first-child{border-left:none}
+  .sess .st{font-size:7.5px;font-weight:600;letter-spacing:.04em;color:#3f4c56;margin-top:2px}
+  .sess.on{color:var(--ink);background:color-mix(in srgb,var(--info) 14%,transparent)}
+  .sess.on .st{color:var(--info)}
+  .sess.kz::after{content:"";position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--info);box-shadow:0 0 6px var(--info)}
+  /* almost-insignificant 24h timeline — session depth + overlaps at a glance */
+  .sessprog{position:relative;height:5px;border-radius:3px;background:#0b1116;overflow:hidden;margin:4px 1px 0}
+  .sessprog .band{position:absolute;top:0;bottom:0;background:var(--info);opacity:.14}
+  .sessprog .now{position:absolute;top:-1px;bottom:-1px;width:1.5px;background:var(--ink);opacity:.85;box-shadow:0 0 4px var(--ink)}
+  .sessclock{text-align:center;font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.06em;margin:4px 0 3px}
+  /* verdict ribbon — the single decision, mirrors the web */
+  /* fixed height + small font so longer text never resizes the bar; overflow marquees */
+  .verdict{display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:0 12px;height:38px;border-radius:12px;
+    border:1px solid var(--line);background:var(--card2);font-size:11px;font-weight:800;letter-spacing:.03em;overflow:hidden}
+  .verdict .vd{width:7px;height:7px;border-radius:50%;flex:none}
+  .verdict.act{border-color:color-mix(in srgb,var(--acc) 45%,transparent);color:var(--acc)}
+  .verdict.notrade{border-color:color-mix(in srgb,var(--wait) 40%,transparent);color:var(--wait)}
+  .verdict.notrade .vd{background:var(--wait)} .verdict.act .vd{background:var(--acc)}
+  .verdict .vwrap{position:relative;flex:1;min-width:0;height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .verdict .vtext{display:inline-block;white-space:nowrap;will-change:transform}
+  .verdict .vtext.watch{color:var(--info)}
+
+  /* HERO — native scroll-snap: one card at a time, photo-swipe, no neighbour peek */
+  .herocar{position:relative;margin-bottom:6px}
+  .herotrack{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+    padding:8px 0 8px;scrollbar-width:none;scroll-behavior:smooth}
+  .herotrack::-webkit-scrollbar{display:none}
+  .heroslide{flex:0 0 100%;width:100%;scroll-snap-align:center;scroll-snap-stop:always;padding:0 3px}
   /* --g = conviction 0..1 → drives glow intensity */
   .hero{position:relative;border:1px solid var(--line);border-radius:22px;overflow:hidden;--g:.5;
     background:radial-gradient(120% 90% at 50% 0%, color-mix(in srgb,var(--acc) calc(7% + var(--g)*18%), transparent) 0%, var(--card) 55%);
-    padding:16px 18px 18px;animation:breathe 5.5s ease-in-out infinite}
+    padding:14px 18px 16px;animation:breathe 5.5s ease-in-out infinite;
+    display:flex;flex-direction:column;min-height:calc(100dvh - 372px)}
   @keyframes breathe{
-    0%,100%{box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) calc(15% + var(--g)*32%),transparent), 0 0 calc(14px + var(--g)*40px) -8px color-mix(in srgb,var(--acc) calc(22% + var(--g)*50%),transparent)}
-    50%    {box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) calc(26% + var(--g)*54%),transparent), 0 0 calc(28px + var(--g)*66px) -6px color-mix(in srgb,var(--acc) calc(38% + var(--g)*58%),transparent)}}
+    0%,100%{box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) calc(30% + var(--g)*28%),transparent), 0 0 calc(16px + var(--g)*20px) -4px color-mix(in srgb,var(--acc) calc(38% + var(--g)*40%),transparent)}
+    50%    {box-shadow:0 0 0 1px color-mix(in srgb,var(--acc) calc(42% + var(--g)*44%),transparent), 0 0 calc(26px + var(--g)*30px) -2px color-mix(in srgb,var(--acc) calc(52% + var(--g)*44%),transparent)}}
   .hbadge{text-align:center;font-size:10.5px;letter-spacing:.22em;color:var(--acc);font-weight:700;display:flex;align-items:center;justify-content:center;gap:7px}
   .hbadge .bd{width:6px;height:6px;border-radius:50%;background:var(--acc)}
-  .hasset{text-align:center;font-size:15px;letter-spacing:.18em;color:var(--mut);margin-top:12px;font-weight:600}
-  .ringwrap{position:relative;height:132px;display:flex;align-items:center;justify-content:center;margin:2px 0 2px}
+  .hasset{text-align:center;font-size:13.5px;letter-spacing:.1em;color:var(--mut);margin-top:10px;font-weight:600;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 6px}
+  .ringwrap{position:relative;flex:1 1 auto;min-height:88px;display:flex;align-items:center;justify-content:center;margin:2px 0 2px}
   .ring{position:absolute;inset:0;margin:auto;width:230px;height:132px;pointer-events:none}
   .ring ellipse{fill:none;stroke:var(--acc)}
   .ring .r1{stroke-dasharray:1.5 9;opacity:.55;animation:spin 44s linear infinite;transform-origin:center}
@@ -67,6 +96,7 @@
   .dots i{width:6px;height:6px;border-radius:50%;background:#22303b;transition:all .2s}
   .dots i.on{background:var(--acc);width:16px;border-radius:3px}
   .swipehint{text-align:center;font-size:9px;letter-spacing:.14em;color:var(--dim);margin:-4px 0 12px}
+  .swipehint:empty{display:none;margin:0}
 
   .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-bottom:13px}
   .clbl{font-size:10px;letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
@@ -240,9 +270,13 @@
     <div class="brand">DIMITRY</div>
     <div class="status"><span class="live" id="live"></span> <span id="statusText">SYSTEM ONLINE</span></div>
   </header>
+  <div class="sessbar" id="sessbar"></div>
+  <div class="sessprog" id="sessprog"></div>
+  <div class="sessclock" id="sessclock"></div>
 
   <!-- OVERVIEW -->
   <section id="overview">
+    <div class="verdict" id="verdict"></div>
     <div class="herocar" id="herocar"><div class="herotrack" id="herotrack"></div></div>
     <div class="dots" id="herodots"></div>
     <div class="swipehint" id="swipehint"></div>
@@ -254,7 +288,7 @@
 
   <!-- SETUPS -->
   <section id="setupsView" class="hidden">
-    <div class="card"><div class="clbl" style="margin-bottom:4px">Primary setups · nearest to entry first</div><div id="allsetups"></div></div>
+    <div class="card"><div class="clbl" style="margin-bottom:4px">Primary setups</div><div id="allsetups"></div></div>
   </section>
 
   <!-- JOURNAL -->
@@ -326,16 +360,18 @@ const setupByKey=key=>{ if(!DATA)return null; const[id]=key.split("#"); const a=
 const lastExec=key=>allExec.find(x=>x.setupKey===key);
 
 async function load(){
+  const sy = window.scrollY;                 // remember where the reader is — restore after refresh
   try{
     DATA=await jget("/api/analysis");
     try{ ME=await jget("/api/whoami"); }catch(e){ ME={name:"owner",role:"owner",canWrite:true}; }
     document.body.classList.toggle("viewonly", !ME.canWrite);
     $("live").className="live";
     $("statusText").textContent = "SYSTEM ONLINE" + (ME.name&&ME.name!=="owner"?" · "+ME.name.toUpperCase():"") + (ME.canWrite?"":" · VIEW-ONLY");
-    renderHero(); renderState(); renderWatch(); renderSetups();
+    renderSessions(); renderHero(); renderState(); renderWatch(); renderSetups();
     jget("/api/ascent").then(renderBrain).catch(()=>{});
     jget("/api/execution").then(r=>{allExec=Array.isArray(r)?r:[];}).catch(()=>{});
     if(sheetKey) refreshSheet();
+    if(sy) window.scrollTo(0, sy);            // don't yank the page to the top on the 30s poll
   }catch(e){
     $("live").className="live off"; $("statusText").textContent="OFFLINE — START DIMITRY";
     document.documentElement.style.setProperty("--acc","var(--sleep)");
@@ -347,65 +383,151 @@ async function load(){
 }
 
 /* ---------------- HERO carousel (swipe across armed setups) ---------------- */
+/* session strip + clock — across the page, under SYSTEM ONLINE */
+function renderSessions(){
+  const now=new Date(), h=now.getUTCHours()+now.getUTCMinutes()/60;
+  const S=[
+    {n:"SYDNEY",  tz:"Australia/Sydney", on:(h>=21||h<6)},
+    {n:"TOKYO",   tz:"Asia/Tokyo",       on:(h>=0&&h<9)},
+    {n:"LONDON",  tz:"Europe/London",    on:(h>=7&&h<16), kz:(h>=7&&h<10)},
+    {n:"NEW YORK",tz:"America/New_York",  on:(h>=12&&h<21), kz:(h>=12&&h<15)},
+  ];
+  const tm=tz=>{ try{ return now.toLocaleTimeString("en-GB",{timeZone:tz,hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } };
+  $("sessbar").innerHTML=S.map(s=>`<div class="sess ${s.on?"on":""} ${s.kz?"kz":""}"><div>${s.n}</div><div class="st">${tm(s.tz)}</div></div>`).join("");
+  /* 24h timeline: faint band per session (overlaps stack → darker), + a now line.
+     Wrap-around sessions (Sydney) are drawn as two segments. */
+  const spans=[[21,24],[0,6],[0,9],[7,16],[12,21]];  // Sydney(x2), Tokyo, London, NY
+  const bands=spans.map(([a,b])=>`<div class="band" style="left:${a/24*100}%;width:${(b-a)/24*100}%"></div>`).join("");
+  $("sessprog").innerHTML=bands+`<div class="now" style="left:${h/24*100}%"></div>`;
+  /* headline clock = the CURRENT time in the active session's city */
+  let prim;
+  if(h>=7&&h<10)        prim={n:"London killzone", tz:"Europe/London"};
+  else if(h>=12&&h<15)  prim={n:"NY killzone",     tz:"America/New_York"};
+  else if(h>=7&&h<16)   prim={n:"London",          tz:"Europe/London"};
+  else if(h>=12&&h<21)  prim={n:"New York",        tz:"America/New_York"};
+  else if(h>=0&&h<9)    prim={n:"Tokyo",           tz:"Asia/Tokyo"};
+  else                  prim={n:"Sydney",          tz:"Australia/Sydney"};
+  $("sessclock").textContent = tm(prim.tz);
+}
+
+/* the single decision — mirrors the web verdict, then flips through the watch list
+   like a flight-coordinator board: NO TRADE ⇄ the items being watched, newest included */
+let verdictMsgs=[], verdictI=0, verdictTimer=null;
+function renderVerdict(){
+  const el=$("verdict"); if(!el) return;
+  const v=(DATA&&DATA.verdict)||{state:"no-trade",text:"NO TRADE · protect capital"};
+  el.className="verdict "+(v.state==="act"?"act":"notrade");
+  verdictMsgs=[{ t:v.text||(v.state==="act"?"ACT":"NO TRADE · protect capital"), watch:false,
+                 asset:v.asset||null, key:v.setupKey||null }];
+  if(v.state!=="act"){
+    (DATA.approaching||[]).forEach(s=>{
+      const dp=(assetById(s.asset)||{}).dp||0;
+      const zone=s.zone?`${fmt(s.zone[0],dp)}–${fmt(s.zone[1],dp)}`:"";
+      const prox=s.proximityPct!=null?` · ${(s.proximityPct*100).toFixed(2)}% away`:"";
+      verdictMsgs.push({ t:`👁 ${s.asset} ${(s.dir||"").toUpperCase()} into ${zone}${prox}`, watch:true,
+                         asset:s.asset, key:s.setupKey });
+    });
+  }
+  if(!el.querySelector(".vtext")) el.innerHTML=`<span class="vd"></span><span class="vwrap"><span class="vtext"></span></span>`;
+  el.onclick=()=>{ const m=verdictMsgs[verdictI]; if(m&&m.asset&&assetById(m.asset)) openAsset(m.asset, m.key); };
+  el.style.cursor="pointer";
+  verdictI=0; showVerdictMsg();
+  clearInterval(verdictTimer);
+  if(verdictMsgs.length>1) verdictTimer=setInterval(()=>{ verdictI=(verdictI+1)%verdictMsgs.length; showVerdictMsg(); }, 5200);
+}
+function showVerdictMsg(){
+  const el=$("verdict"); if(!el) return; const tx=el.querySelector(".vtext"); if(!tx) return;
+  const wrap=tx.parentElement, m=verdictMsgs[verdictI]||{t:""};
+  tx.style.transition="opacity .3s ease"; tx.style.opacity="0";
+  setTimeout(()=>{
+    tx.style.transition="none"; tx.style.transform="translateX(0)";      // snap back to start
+    tx.textContent=m.t; tx.className="vtext"+(m.watch?" watch":"");
+    void tx.offsetWidth;                                                 // reflow for a fresh measure
+    const over = tx.scrollWidth - wrap.clientWidth;                       // does it overflow the bar?
+    wrap.style.justifyContent = over>4 ? "flex-start" : "center";
+    tx.style.transition="opacity .3s ease"; tx.style.opacity="1";
+    if(over>4){                                                          // slide across slowly to reveal the rest
+      const dur=Math.max(2.6, over/38);
+      requestAnimationFrame(()=>{ tx.style.transition=`opacity .3s ease, transform ${dur.toFixed(1)}s linear`;
+        tx.style.transform=`translateX(-${over}px)`; });
+    }
+  }, 180);
+}
+
 let heroIdx=0, heroSlides=[];
 function renderHero(){
   const root=document.documentElement.style;
-  heroSlides = (DATA.armed||[]).slice();
+  renderVerdict();
+  /* the BEST setups only — open markets, server-ranked (armed → nearest → conviction),
+     capped at 5 (usually ~3). Not the whole board; that lives in the Setups tab. */
+  const open=(DATA.primaries||[]).filter(p=>p.marketOpen);
+  heroSlides = (open.length?open:(DATA.primaries||[])).slice(0,5);
   if(!heroSlides.length){
     root.setProperty("--acc","var(--wait)");
-    $("herotrack").innerHTML=`<div class="heroslide"><div class="hero">
+    $("herotrack").innerHTML=`<div class="heroslide"><div class="hero" style="--g:.55">
       <div class="hbadge"><span class="bd"></span> STAND DOWN</div>
       <div class="ringwrap"><svg class="ring" viewBox="0 0 230 132"><ellipse class="r1" cx="115" cy="66" rx="108" ry="58"/></svg>
-      <div class="hdir" style="font-size:34px">PROTECT<br>CAPITAL</div></div>
-      <div class="hstage">no armed setup on an open market</div></div></div>`;
+      <div class="hdir" style="font-size:32px">PROTECT<br>CAPITAL</div></div>
+      <div class="hstage">no setups on the board</div></div></div>`;
     $("herodots").innerHTML=""; $("swipehint").textContent="";
     return;
   }
-  heroIdx=Math.min(heroIdx,heroSlides.length-1);
-  $("herotrack").innerHTML=heroSlides.map(heroSlide).join("");
-  $("herodots").innerHTML=heroSlides.length>1?heroSlides.map((_,i)=>`<i class="${i===heroIdx?"on":""}"></i>`).join(""):"";
-  $("swipehint").textContent=heroSlides.length>1?`◂ swipe · ${heroSlides.length} armed setups · nearest to entry first ▸`:"";
-  positionHero();
+  if(heroIdx>=heroSlides.length) heroIdx=0;
+  const track=$("herotrack");
+  track.innerHTML=heroSlides.map(heroSlide).join("");
+  track.querySelectorAll(".heroslide").forEach(el=>{ if(el.dataset.asset) el.onclick=()=>openAsset(el.dataset.asset,el.dataset.key); });
+  $("herodots").innerHTML=heroSlides.length>1?heroSlides.map((_,i)=>`<i class="${i===heroIdx?"on":""}" data-i="${i}"></i>`).join(""):"";
+  $("herodots").querySelectorAll("i").forEach(d=>d.onclick=()=>scrollToHero(+d.dataset.i));
+  $("swipehint").textContent="";
+  track.scrollLeft = heroIdx * track.clientWidth;   // restore position without animation
+  setAcc();
 }
+function setAcc(){ const s=heroSlides[heroIdx]; if(s) document.documentElement.style.setProperty("--acc", s.marketOpen?accOf(s.dir):"var(--sleep)"); }
+function scrollToHero(i){ const t=$("herotrack"); t.scrollTo({left:i*t.clientWidth, behavior:"smooth"}); }
 function heroSlide(s){
   const dp=(assetById(s.asset)||{}).dp||0;
-  const acc=accOf(s.dir);
-  const conv=Math.round((s.baseProb||0)*100);
+  const closed=!s.marketOpen, open=s.entryOpen;
+  const acc = closed ? "var(--sleep)" : accOf(s.dir);
+  const conv=Math.round((s.liveConviction!=null?s.liveConviction:(s.baseProb||0))*100);
+  const grade=s.convGrade||"", tr=s.convTrend==="up"?" ▲":s.convTrend==="down"?" ▼":"";
   const seg=28,on=Math.round(conv/100*seg);
   const bar=Array.from({length:seg},(_,i)=>`<i class="${i<on?"on":""}"></i>`).join("");
-  const stage=s.stage, open=s.entryOpen;
-  const stageTxt=STAGE_LBL[stage]||"—";
+  const stage=s.stage;
+  const cv=conv+"%"+(grade?" "+grade:"")+tr;
+  const badge = closed ? "MARKET CLOSED"
+    : open ? "● ENTRY WINDOW · "+cv
+    : stage==="continuation" ? "● CONTINUATION · "+cv
+    : stage==="running" ? "MOVED WITHOUT YOU"
+    : "ARMED · "+cv;
+  const stageTxt = closed ? "reopens when the session opens" : (STAGE_LBL[stage]||"—");
   const zone=s.zone?`${fmt(s.zone[0],dp)}–${fmt(s.zone[1],dp)}`:"—";
   const t1=s.targets&&s.targets[0]?fmt(s.targets[0].p,dp):"—";
-  const glowG=Math.max(0.05,Math.min(1,(conv-40)/40));   // 40%→dim, 80%→max glow
-  return `<div class="heroslide"><div class="hero" style="--acc:${acc};--g:${glowG.toFixed(2)}">
-    <div class="hbadge"><span class="bd"></span> ${open?"ENTRY WINDOW":"ARMED SETUP"} · ${conv}%</div>
+  const glowG = closed ? 0.12 : Math.max(0.15,Math.min(1,(conv-40)/40));
+  const prox = closed ? "closed" : open ? "in zone" : (s.proximityPct!=null?(s.proximityPct*100).toFixed(2)+"% away":"");
+  return `<div class="heroslide" data-asset="${esc(s.asset)}" data-key="${esc(s.setupKey)}"><div class="hero" style="--acc:${acc};--g:${glowG.toFixed(2)}">
+    <div class="hbadge"><span class="bd"></span> ${badge}</div>
     <div class="hasset">${esc(s.asset)} · ${esc((s.name||"").replace(/⭐+/g,"").replace(/PRIMARY/i,"").trim())}</div>
     <div class="ringwrap">
       <svg class="ring" viewBox="0 0 230 132"><ellipse class="r1" cx="115" cy="66" rx="108" ry="58"/><ellipse class="r2" cx="115" cy="66" rx="96" ry="49"/></svg>
       <div class="hdir">${wordOf(s.dir)}</div>
     </div>
-    <div class="hconv"><div class="v">${conv}%</div><div class="k">CONVICTION</div></div>
-    <div class="segbar">${bar}</div>
     <div class="hstage ${open?"":"dim"}">${esc(stageTxt)}</div>
+    <div class="segbar">${bar}</div>
     <div class="hgrid">
       <div><div class="k">ZONE</div><div class="v">${zone}</div></div>
       <div><div class="k">STOP</div><div class="v">${s.stop!=null?fmt(s.stop,dp):"—"}</div></div>
       <div><div class="k">T1</div><div class="v">${t1}</div></div>
     </div>
-    <div class="hmeta"><span>session <b>${esc(s.session||"—")}</b></span><span>armed <b>${esc(s.armedFor||"—")}</b></span><span>scan <b>${nextScanMin()}m</b></span></div>
+    <div class="hmeta"><span>${esc(prox)}</span><span>session <b>${esc(s.session||"—")}</b></span><span>${closed?"":"scan <b>"+nextScanMin()+"m</b>"}</span></div>
   </div></div>`;
 }
-function positionHero(){ $("herotrack").style.transform=`translateX(-${heroIdx*100}%)`;
-  const s=heroSlides[heroIdx]; if(s) document.documentElement.style.setProperty("--acc",accOf(s.dir));
-  $("herodots").querySelectorAll("i").forEach((d,i)=>d.classList.toggle("on",i===heroIdx)); }
-function heroGo(d){ if(!heroSlides.length)return; heroIdx=(heroIdx+d+heroSlides.length)%heroSlides.length; positionHero(); }
-(function(){ let x0=null,y0=null;
-  const el=$("herocar");
-  el.addEventListener("touchstart",e=>{x0=e.touches[0].clientX;y0=e.touches[0].clientY;},{passive:true});
-  el.addEventListener("touchend",e=>{ if(x0==null)return; const dx=e.changedTouches[0].clientX-x0, dy=e.changedTouches[0].clientY-y0;
-    if(Math.abs(dx)>42 && Math.abs(dx)>Math.abs(dy)){ heroGo(dx<0?1:-1); } x0=null; },{passive:true});
-  el.addEventListener("click",e=>{ const s=heroSlides[heroIdx]; if(s) openAsset(s.asset,s.setupKey); });
+/* native scroll drives the index: update dots + accent as you swipe (debounced) */
+(function(){ const track=$("herotrack"); if(!track) return; let tmr=null;
+  track.addEventListener("scroll",()=>{ clearTimeout(tmr); tmr=setTimeout(()=>{
+    const w=Math.max(1,track.clientWidth), i=Math.round(track.scrollLeft/w);
+    if(i!==heroIdx && i>=0 && i<heroSlides.length){ heroIdx=i; setAcc(); }
+    $("herodots").querySelectorAll("i").forEach((d,j)=>d.classList.toggle("on",j===heroIdx));
+  },80); },{passive:true});
 })();
 
 function renderState(){
@@ -466,11 +588,14 @@ function renderSetups(){
 
 /* ---------------- drill-down sheets ---------------- */
 let navStack=[], sheetKey=null;
-function openSheet(t){$("shtitle").textContent=t;$("sheet").classList.add("on");$("shbody").scrollTop=0;}
+function openSheet(t){$("shtitle").textContent=t;$("sheet").classList.add("on");}
 function closeSheet(){$("sheet").classList.remove("on");navStack=[];sheetKey=null;}
 $("shback").onclick=()=>{navStack.pop();const t=navStack[navStack.length-1];
   if(!t)return closeSheet(); if(t.type==="asset")renderAsset(t.id,t.focus); else renderSetup(t.key);};
 function refreshSheet(){ const t=navStack[navStack.length-1]; if(!t)return;
+  /* don't rebuild the sheet while the user is typing in it (execution form) */
+  const ae=document.activeElement;
+  if(ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName) && $("sheet").contains(ae)) return;
   if(t.type==="asset")renderAsset(t.id,t.focus,true); else renderSetup(t.key,true); }
 
 function openAsset(id,focus){navStack.push({type:"asset",id,focus});renderAsset(id,focus);}
@@ -485,7 +610,7 @@ function renderAsset(id,focus,keep){
   } else { h+=`<div class="dplan" style="margin-top:4px">${esc(a.line||"No analysis yet — monitoring.")}</div>`; }
   if(!a.marketOpen) h+=`<div class="closedbanner">☾ ${esc(a.id)} market is CLOSED (weekend / outside the session) — no execution. Reopens Sun 21:00 UTC.</div>`;
   const sts=a.setups||[];
-  h+=`<div class="clbl" style="margin:18px 2px 4px">Setups (${sts.length}) · tap for the full plan</div><div class="card" style="margin-bottom:0">`;
+  h+=`<div class="clbl" style="margin:18px 2px 4px">Setups (${sts.length})</div><div class="card" style="margin-bottom:0">`;
   h+= sts.length ? sts.map(s=>{
       const dp=a.dp||0, cc=accOf(s.dir), open=s.entryOpen;
       const isPrimary=/PRIMARY/i.test(s.name||"");
@@ -505,8 +630,9 @@ function renderAsset(id,focus,keep){
     h+=`<div class="clbl" style="margin:18px 2px 2px">Level Ladder · touch-odds</div>`;
     h+=ladderHTML(a, sts);
   }
+  const _st=$("shbody").scrollTop;
   $("shbody").innerHTML=h;
-  $("shbody").scrollTop=0;
+  $("shbody").scrollTop = keep ? _st : 0;      // refresh keeps your place; fresh open starts at top
   $("shbody").querySelectorAll(".dsetup").forEach(el=>el.onclick=()=>openSetup(el.dataset.key));
   wireLadders($("shbody"));
 }
@@ -520,7 +646,8 @@ function renderSetup(key,keep){
   if(!s.asset) s.asset = assetId;                    // self-heal older payloads
   sheetKey="setup:"+key; openSheet(assetId||"SETUP");
   const dir=s.dir||"flat", acc=accOf(dir);
-  const conv=Math.round((s.baseProb||0)*100), seg=26, on=Math.round(conv/100*seg);
+  const conv=Math.round((s.liveConviction!=null?s.liveConviction:(s.baseProb||0))*100), seg=26, on=Math.round(conv/100*seg);
+  const convTr=s.convTrend==="up"?" ▲":s.convTrend==="down"?" ▼":"";
   const bar=Array.from({length:seg},(_,i)=>`<i class="${i<on?"on":""}"></i>`).join("");
   const open=s.entryOpen, stage=s.stage, stageTxt=STAGE_LBL[stage]||"—";
   const isPrimary=/PRIMARY/i.test(s.name||"");
@@ -547,16 +674,15 @@ function renderSetup(key,keep){
       ${s.hzn?`<span class="mtag">${esc(s.hzn)}</span>`:""}
       ${s.scalpOK?`<span class="mtag">scalp ok</span>`:""}
     </div>
-    <div class="hconv" style="margin-top:12px"><div class="v" style="color:${acc}">${conv}%</div><div class="k">CONVICTION${m&&m.cat?" · GRADE "+esc(m.cat):""}</div></div>
+    <div class="hconv" style="margin-top:12px"><div class="v" style="color:${acc}">${conv}%${esc(convTr)}</div><div class="k">LIVE CONVICTION${s.convGrade?" · GRADE "+esc(s.convGrade):""}</div></div>
     <div class="segbar" style="margin:9px 0 14px">${bar}</div></div>
     <div class="card" style="margin-bottom:0">`;
   if(s.zone)h+=`<div class="drow"><span class="dk">Entry zone</span><span class="dv">${fmt(s.zone[0],dp)} – ${fmt(s.zone[1],dp)}</span></div>`;
   if(s.stop!=null)h+=`<div class="drow"><span class="dk">Stop</span><span class="dv">${fmt(s.stop,dp)}${stopDist!=null?` <span style="color:var(--dim);font-weight:600">· ${stopDist.toFixed(2)}%</span>`:""}</span></div>`;
   if(s.size)h+=`<div class="drow"><span class="dk">Size</span><span class="dv">${esc(s.size)}</span></div>`;
   if(liveRR!=null)h+=`<div class="drow"><span class="dk">Live R:R → T1</span><span class="dv" style="color:var(--long)">${liveRR.toFixed(1)}:1</span></div>`;
-  h+=`<div class="drow"><span class="dk">Entry window</span><span class="dv" style="color:${open?acc:"var(--mut)"};max-width:62%">${esc(stageTxt)}</span></div>`;
-  h+=`<div class="drow tiny"><span class="dk">Entry now</span><span class="dv" style="max-width:64%;color:${open?acc:"var(--mut)"}">${esc(entryNow)}</span></div>`;
-  h+=`<div class="drow tiny"><span class="dk">Session · set</span><span class="dv">${esc(s.session||"—")} · ${esc(s.armedFor||"—")} ago${DATA.updated?" · "+esc(DATA.updated):""}</span></div>`;
+  h+=`<div class="drow"><span class="dk">Entry window</span><span class="dv" style="color:${open?acc:"var(--mut)"};max-width:64%">${esc(entryNow)}</span></div>`;
+  h+=`<div class="drow tiny"><span class="dk">Session · armed</span><span class="dv">${esc(s.session||"—")} · ${esc(s.armedFor||"—")} ago</span></div>`;
   h+=`</div>`;
   /* targets with R:R */
   if(s.targets&&s.targets.length){
@@ -611,8 +737,9 @@ function renderSetup(key,keep){
         <button class="exbtn confirm" id="ex-confirm">Confirm execution</button></div>
       <div id="exresult" style="text-align:center;font-size:12.5px;margin-top:9px"></div>`;
   }
+  const _st2=$("shbody").scrollTop;
   $("shbody").innerHTML=h;
-  $("shbody").scrollTop=0;
+  $("shbody").scrollTop = keep ? _st2 : 0;     // refresh keeps your place; fresh open starts at top
 
   let exFile=null;
   if($("ex-file")) $("ex-file").onchange=async e=>{const f=e.target.files[0]; if(!f){exFile=null;$("ex-fi").textContent="";return;}
